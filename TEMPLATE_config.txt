@@ -1,0 +1,9 @@
+[config]
+chromium =
+buscarCartasNuevas = True
+descargarImagenes = True
+forzarBusqueda = False
+telegramBotToken = 
+telegramChatCanalChollosId = 
+telegramChatCanalCartasId = 
+telegramLogChatId = 
