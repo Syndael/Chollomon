@@ -1,9 +1,9 @@
 import io, os, logging, configparser, gspread, constants, configParserUtils
-logging.basicConfig(filename=os.path.join(os.path.abspath(os.path.dirname(__file__)), constants.LOG_FILE), filemode='w', format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S', level=logging.INFO, handlers=[logging.FileHandler(os.path.join(os.path.abspath(os.path.dirname(__file__)), constants.LOG_FILE), mode='w', encoding='UTF-8'), logging.StreamHandler()])
 from datetime import datetime
 from oauth2client.service_account import ServiceAccountCredentials
 
-def actualizarPrecios(actual, minimo, alarma, buscar, indiceFila, indices):
+def actualizarPrecios(actual, minimo, alarma, indiceFila, indices):
     hoja = getHoja(constants.SHEET_NAME_PRECIOS)
     if actual:
         columnaActual = indices.get(constants.ACTUAL)
@@ -19,10 +19,6 @@ def actualizarPrecios(actual, minimo, alarma, buscar, indiceFila, indices):
         columnaAlarma = indices.get(constants.ALARMA)
         logging.debug(str("Actualizando el precio alarma " + str(alarma) + " en la col " + str(columnaAlarma) + " fil " + str(indiceFila)))
         hoja.update_cell(indiceFila, columnaAlarma, alarma)
-    if not buscar:
-        columnaBuscar = indices.get(constants.BUSCAR)
-        logging.debug("Actualizando buscar a False")
-        hoja.update_cell(indiceFila, columnaBuscar, buscar)
 
 def getListaImagenes():
     hoja = getHoja(constants.SHEET_NAME_ALBUM)
@@ -70,7 +66,7 @@ def getNumerosMixCartas():
 
     return numeros
 
-def getListaSeguimientos():
+def getListaSeguimientos(forzarBusqueda):
     hoja = getHoja(constants.SHEET_NAME_PRECIOS)
     indicesSeguimientos = []
     seguimientos = []
@@ -82,8 +78,7 @@ def getListaSeguimientos():
     for carta in cartas:
         numeroCarta = carta.get(constants.NUMERO_MIX)
         buscar = carta.get(constants.BUSCAR)
-        forzarBusqueda = configParserUtils.getConfigParserGet('forzarBusqueda')
-        if forzarBusqueda and forzarBusqueda == "True":
+        if forzarBusqueda:
             buscar = "TRUE"
         if buscar and buscar == "TRUE" and numeroCarta and len(numeroCarta) > 0:
             urlTrade = carta.get(constants.TRADE)

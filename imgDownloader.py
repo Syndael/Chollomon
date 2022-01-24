@@ -1,5 +1,5 @@
 import os, urllib.request, configParserUtils, spreedUtils, requests, logging, constants
-logging.basicConfig(filename=os.path.join(os.path.abspath(os.path.dirname(__file__)), constants.LOG_FILE), filemode='w', format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S', level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S', level=logging.INFO, handlers=[logging.FileHandler(os.path.join(os.path.abspath(os.path.dirname(__file__)), constants.LOG_FILE), mode='w', encoding='UTF-8'), logging.StreamHandler()])
 from os.path import exists
 
 def descargarImgs():

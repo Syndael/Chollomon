@@ -1,9 +1,10 @@
 [config]
 chromium =
+entornoDocker = False
 buscarCartasNuevas = True
 descargarImagenes = True
-forzarBusqueda = False
-telegramBotToken = 
-telegramChatCanalChollosId = 
-telegramChatCanalCartasId = 
-telegramLogChatId = 
+cantidadBusquedas = 10
+telegramBotToken =
+telegramChatCanalChollosId =
+telegramChatCanalCartasId =
+telegramLogChatId =
