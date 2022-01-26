@@ -1,5 +1,14 @@
-# Log
-LOG_FILE = "scan.log"
+# Config
+LOG_FILE = "logFile"
+CHROMIUM = "chromium"
+ENTORNO_DOCKER = "entornoDocker"
+BUSCAR_CARTAS_NUEVAS = "buscarCartasNuevas"
+DESCARGAR_IMAGENES = "descargarImagenes"
+CANTIDAD_BUSQUEDAS = "cantidadBusquedas"
+TELEGRAM_BOT_TOKEN = "telegramBotToken"
+TELEGRAM_CHAT_CANAL_CHOLLOS_ID = "telegramChatCanalChollosId"
+TELEGRAM_CHAT_CANAL_CARTAS_ID = "telegramChatCanalCartasId"
+TELEGRAM_LOG_CHAT_ID = "telegramLogChatId"
 
 # Urls templates
 URL_TEMPLATE_GLOBAL = "https://world.digimoncard.com/images/cardlist/card/"
@@ -35,6 +44,7 @@ BUSCAR = "Buscar"
 COMPRA = "Compra"
 FMINIMO = "FMinimo"
 MINIMO = "Minimo"
+NOMBRE = "Digimon"
 NUMERO = "Número"
 NUMERO_MIX = "Número Mix"
 NUMERO_P="P#"

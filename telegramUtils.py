@@ -2,7 +2,7 @@ import telebot, configParserUtils
 from telebot.types import InputMediaPhoto
 
 def enviarMensajeTelegram(telegramChatId, telegramMensaje, fotoImg = None, fotoPrc = None):
-    telegramBotToken = configParserUtils.getConfigParserGet('telegramBotToken')
+    telegramBotToken = configParserUtils.getConfigParserGet(constants.TELEGRAM_BOT_TOKEN)
 
     if(telegramBotToken and telegramChatId):
         telegramService = telebot.TeleBot(telegramBotToken)

@@ -1,9 +1,9 @@
 import io, os, logging, constants, configParserUtils, spreedUtils, imgDownloader, telegramUtils
-logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S', level=logging.INFO, handlers=[logging.FileHandler(os.path.join(os.path.abspath(os.path.dirname(__file__)), constants.LOG_FILE), mode='w', encoding='UTF-8'), logging.StreamHandler()])
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S', level=logging.INFO, handlers=[logging.FileHandler(os.path.join(os.path.abspath(os.path.dirname(__file__)), configParserUtils.getConfigParserGet(constants.LOG_FILE)), mode='w', encoding='UTF-8'), logging.StreamHandler()])
 from os.path import exists
 
 def enviarMensajeTelegram(telegramChatId, telegramMensaje, fotoImg = None, fotoPrc = None):
-    telegramBotToken = configParserUtils.getConfigParserGet('telegramBotToken')
+    telegramBotToken = configParserUtils.getConfigParserGet(constants.TELEGRAM_BOT_TOKEN)
 
     if(telegramBotToken and telegramChatId):
         telegramService = telebot.TeleBot(telegramBotToken)
@@ -35,7 +35,7 @@ def buscarCartas(prefijo, cantidad, format, cartasMix):
                     else:
                         #añadir carta al listado
                         logging.info(str("Añadiendo " + numCartaAlter))
-                        telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet('telegramChatCanalCartasId'), str("Nueva carta añadida " + numCartaAlter + " " + formatUrlCartaGlobal(numCartaAlter)), rutaImg)
+                        telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_CHAT_CANAL_CARTAS_ID), str("Nueva carta añadida " + numCartaAlter + " " + formatUrlCartaGlobal(numCartaAlter)), rutaImg)
                         spreedUtils.nuevaFila(numCarta, numCartaAlter, formatUrlCartaGlobal(numCartaAlter))
 
                 alterIndex = alterIndex + 1
@@ -71,3 +71,6 @@ def buscarCartasNuevas():
                 temporadaIndex = temporadaIndex + 1
         elif not categoria.get(constants.TEMPORADA):
             buscarCartas(categoria.get(constants.PREFIJO), categoria.get(constants.CANTIDAD), categoria.get(constants.FORMAT), cartasMix)
+
+if __name__ == '__main__':
+    buscarCartasNuevas()

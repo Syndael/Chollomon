@@ -1,5 +1,5 @@
 import io, os, logging, configparser, gspread, constants, configParserUtils
-logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S', level=logging.INFO, handlers=[logging.FileHandler(os.path.join(os.path.abspath(os.path.dirname(__file__)), constants.LOG_FILE), mode='w', encoding='UTF-8'), logging.StreamHandler()])
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S', level=logging.INFO, handlers=[logging.FileHandler(os.path.join(os.path.abspath(os.path.dirname(__file__)), configParserUtils.getConfigParserGet(constants.LOG_FILE)), mode='w', encoding='UTF-8'), logging.StreamHandler()])
 from datetime import datetime
 from oauth2client.service_account import ServiceAccountCredentials
 
@@ -83,7 +83,7 @@ def getListaSeguimientos(forzarBusqueda):
         if buscar and buscar == "TRUE" and numeroCarta and len(numeroCarta) > 0:
             urlTrade = carta.get(constants.TRADE)
             if urlTrade and len(urlTrade) > 0:
-                seguimientos.append({constants.FILA: indiceFila, constants.TRADE: urlTrade, constants.NUMERO: carta.get(constants.NUMERO_MIX), constants.ALARMA: carta.get(constants.ALARMA), constants.ACTUAL: carta.get(constants.ACTUAL), constants.MINIMO: carta.get(constants.MINIMO)})
+                seguimientos.append({constants.FILA: indiceFila, constants.TRADE: urlTrade, constants.NUMERO: carta.get(constants.NUMERO_MIX), constants.ALARMA: carta.get(constants.ALARMA), constants.ACTUAL: carta.get(constants.ACTUAL), constants.MINIMO: carta.get(constants.MINIMO), constants.NOMBRE: carta.get(constants.NOMBRE)})
 
         indiceFila = indiceFila + 1
 
@@ -95,7 +95,7 @@ def getListaSeguimientos(forzarBusqueda):
 def getIndices(hoja):
     titulos = hoja.row_values(1)
 
-    indicesCampos = {constants.TRADE: 0, constants.NUMERO_MIX: 0, constants.ALARMA: 0, constants.COMPRA: 0, constants.ACTUAL: 0, constants.MINIMO: 0, constants.FMINIMO: 0, constants.NUMERO: 0, constants.BUSCAR: 0, constants.URL_IMAGEN: 0, constants.NUMERO_P: 0}
+    indicesCampos = {constants.TRADE: 0, constants.NUMERO_MIX: 0, constants.ALARMA: 0, constants.COMPRA: 0, constants.ACTUAL: 0, constants.MINIMO: 0, constants.FMINIMO: 0, constants.NUMERO: 0, constants.BUSCAR: 0, constants.URL_IMAGEN: 0, constants.NUMERO_P: 0, constants.NOMBRE: 0}
     for tituloIndex in range(len(titulos)):
         titulo = titulos[tituloIndex]
         if titulo == constants.TRADE:
@@ -120,6 +120,8 @@ def getIndices(hoja):
             indicesCampos[constants.URL_IMAGEN] = tituloIndex + 1
         elif titulo == constants.NUMERO_P:
             indicesCampos[constants.NUMERO_P] = tituloIndex + 1
+        elif titulo == constants.NOMBRE:
+            indicesCampos[constants.NOMBRE] = tituloIndex + 1
 
     return indicesCampos
 
