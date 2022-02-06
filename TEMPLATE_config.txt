@@ -2,6 +2,7 @@
 logFile =
 chromium =
 entornoDocker = False
+bucleInfinito = False
 buscarCartasNuevas = True
 descargarImagenes = True
 cantidadBusquedas = 10

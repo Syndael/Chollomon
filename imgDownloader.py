@@ -5,12 +5,14 @@ from os.path import exists
 def descargarImgs():
     imgs = spreedUtils.getListaImagenes()
     for img in imgs:
-        nombreImg = str("img_" + img.get(constants.NUMERO) + ".png")
+        nombreImg = str("img_" + img.get(constants.CODIGO) + ".png")
         rutaImg = os.path.join(os.path.abspath(os.path.dirname(__file__)), "img", nombreImg)
         if not exists(rutaImg):
-            descargarImg(nombreImg, img.get(constants.URL_IMAGEN), rutaImg)
+            rutaDescarga = descargarImg(nombreImg, img.get(constants.URL_IMAGEN), rutaImg)
+            if os.path.getsize(rutaDescarga) < constants.TAMANHO_MIN_IMG:
+                os.remove(rutaDescarga)
         else:
-            logging.debug(str("No se descarga la " + img.get(constants.NUMERO)))
+            logging.debug(str("No se descarga la " + img.get(constants.CODIGO)))
 
 def descargarImg(nombreImg, url, rutaImg = None):
     logging.info(str("Descargando " + nombreImg + " " + url))

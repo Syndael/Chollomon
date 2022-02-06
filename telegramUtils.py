@@ -1,4 +1,4 @@
-import telebot, configParserUtils
+import telebot, configParserUtils, constants
 from telebot.types import InputMediaPhoto
 
 def enviarMensajeTelegram(telegramChatId, telegramMensaje, fotoImg = None, fotoPrc = None):

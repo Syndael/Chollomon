@@ -1,20 +1,7 @@
 import io, os, logging, constants, configParserUtils, spreedUtils, imgDownloader, telegramUtils
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', datefmt='%d/%m/%Y %H:%M:%S', level=logging.INFO, handlers=[logging.FileHandler(os.path.join(os.path.abspath(os.path.dirname(__file__)), configParserUtils.getConfigParserGet(constants.LOG_FILE)), mode='w', encoding='UTF-8'), logging.StreamHandler()])
 from os.path import exists
-
-def enviarMensajeTelegram(telegramChatId, telegramMensaje, fotoImg = None, fotoPrc = None):
-    telegramBotToken = configParserUtils.getConfigParserGet(constants.TELEGRAM_BOT_TOKEN)
-
-    if(telegramBotToken and telegramChatId):
-        telegramService = telebot.TeleBot(telegramBotToken)
-
-        media = []
-        if fotoImg and fotoPrc:
-            media.append(InputMediaPhoto (open(fotoImg, "rb"), caption = telegramMensaje))
-            media.append(InputMediaPhoto (open(fotoPrc, "rb")))
-            telegramService.send_media_group(telegramChatId, media)
-        else:
-            telegramService.send_message(telegramChatId, telegramMensaje)
+from datetime import datetime
 
 def buscarCartas(prefijo, cantidad, format, cartasMix):
     cartaIndex = 1
@@ -33,10 +20,7 @@ def buscarCartas(prefijo, cantidad, format, cartasMix):
                         logging.info(str("No encontrado " + numCartaAlter + " fin de búsqueda de " + numCarta))
                         finAlter = True
                     else:
-                        #añadir carta al listado
-                        logging.info(str("Añadiendo " + numCartaAlter))
-                        telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_CHAT_CANAL_CARTAS_ID), str("Nueva carta añadida " + numCartaAlter + " " + formatUrlCartaGlobal(numCartaAlter)), rutaImg)
-                        spreedUtils.nuevaFila(numCarta, numCartaAlter, formatUrlCartaGlobal(numCartaAlter))
+                        addCarta(numCarta, numCartaAlter, rutaImg)
 
                 alterIndex = alterIndex + 1
         else:
@@ -48,14 +32,40 @@ def buscarCartas(prefijo, cantidad, format, cartasMix):
                 else:
                     logging.info(str("No encontrado " + numCarta + " fin de temporada"))
                     return False
+            else:
+                addCarta(numCarta, numCarta, rutaImg)
 
         cartaIndex = cartaIndex + 1
 
-def formatUrlCartaGlobal(numCarta):
-    return str(constants.URL_TEMPLATE_GLOBAL + numCarta + constants.URLS_IMG_FORMAT)
+def addCarta(numCarta, numCartaAlter, rutaImg):
+    textoExtra = None
+    if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "0":
+        textoExtra = "(Global)"
+    elif configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "1":
+        textoExtra = "(Japón)"
+    else:
+        logging.error("No se ha definido modo de busqueda")
+        raise Exception("No se ha definido modo de busqueda")
+
+    logging.info(str("Añadiendo " + numCartaAlter + textoExtra))
+    telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_CHAT_CANAL_CARTAS_ID), str("Nueva carta añadida " + numCartaAlter + " " + textoExtra + " " + formatUrlCarta(numCartaAlter)), rutaImg)
+
+    if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "0":
+        spreedUtils.nuevaFila(numCarta, numCartaAlter, formatUrlCarta(numCartaAlter), 0)
+    elif configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "1":
+        spreedUtils.nuevaFila(numCarta, numCartaAlter, formatUrlCarta(numCartaAlter), 1)
+
+def formatUrlCarta(numCarta):
+    if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "0":
+        return str(constants.URL_TEMPLATE_GLOBAL + numCarta + constants.URLS_IMG_FORMAT)
+    elif configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "1":
+        return str(constants.URL_TEMPLATE_JP + numCarta + constants.URLS_IMG_FORMAT)
+    else:
+        logging.error("No se ha definido modo de busqueda")
+        raise Exception("No se ha definido modo de busqueda")
 
 def descargarImg(numCarta):
-    urlImg = formatUrlCartaGlobal(numCarta)
+    urlImg = formatUrlCarta(numCarta)
     return imgDownloader.descargarImg("tmpFinder.png", urlImg)
 
 def buscarCartasNuevas():
@@ -73,4 +83,17 @@ def buscarCartasNuevas():
             buscarCartas(categoria.get(constants.PREFIJO), categoria.get(constants.CANTIDAD), categoria.get(constants.FORMAT), cartasMix)
 
 if __name__ == '__main__':
-    buscarCartasNuevas()
+    try:
+        telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), "Buscando cartas nuevas a las %s" % datetime.now().strftime("%H:%M"))
+        buscarCartasNuevas()
+        telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), "Fin búsqueda de cartas nuevas a las %s" % datetime.now().strftime("%H:%M"))
+    except Exception as e:
+        msgError = "Error buscando cartas"
+        if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "0":
+            msgError = str(msgError + "(Global)")
+        elif configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "1":
+            msgError = str(msgError + "(Japón)")
+        else:
+            logging.error("No se ha definido modo de búsqueda")
+        logging.error(msgError)
+        telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), msgError)
