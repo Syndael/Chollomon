@@ -5,8 +5,15 @@ entornoDocker = False
 bucleInfinito = False
 buscarCartasNuevas = True
 descargarImagenes = True
-cantidadBusquedas = 10
+cantidadBusquedas = 1
+# True busca en la primera vuelta cartas sin tener en cuenta la casilla busqueda
+forzarPrimeraBusqueda = True
+# 0 World, 1 Japon
+modoBuscador = 0
+# 0 Trader, 1 Market
+modoEscaneo = 0
 telegramBotToken =
 telegramChatCanalChollosId =
 telegramChatCanalCartasId =
 telegramLogChatId =
+workbookName = Digimon

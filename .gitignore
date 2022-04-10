@@ -2,6 +2,7 @@
 client_secret.json
 config.txt
 img/*
+.idea/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

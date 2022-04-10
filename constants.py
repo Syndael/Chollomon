@@ -4,14 +4,16 @@ CHROMIUM = "chromium"
 ENTORNO_DOCKER = "entornoDocker"
 BUCLE_INFINITO = "bucleInfinito"
 BUSCAR_CARTAS_NUEVAS = "buscarCartasNuevas"
-DESCARGAR_IMAGENES = "descargarImagenes"
 CANTIDAD_BUSQUEDAS = "cantidadBusquedas"
+DESCARGAR_IMAGENES = "descargarImagenes"
+FORZAR_PRIMERA_BUSQUEDA = "forzarPrimeraBusqueda"
 MODO_BUSCADOR = "modoBuscador"
 MODO_ESCANEO = "modoEscaneo"
 TELEGRAM_BOT_TOKEN = "telegramBotToken"
 TELEGRAM_CHAT_CANAL_CHOLLOS_ID = "telegramChatCanalChollosId"
 TELEGRAM_CHAT_CANAL_CARTAS_ID = "telegramChatCanalCartasId"
 TELEGRAM_LOG_CHAT_ID = "telegramLogChatId"
+WORKBOOK_NAME = "workbookName"
 
 # Urls templates
 URL_TEMPLATE_GLOBAL = "https://world.digimoncard.com/images/cardlist/card/"
@@ -37,7 +39,6 @@ WEB_MARKET = "CardMarket"
 TAMANHO_MIN_IMG = 3000
 
 # Sheet
-WORKBOOK_NAME = "Digimones"
 SHEET_NAME_ALBUM = "Album"
 SHEET_NAME_PRECIOS_AUX = "Precios Aux"
 SHEET_NAME_PRECIOS_MARKET = "Precios Market"
