@@ -16,6 +16,7 @@ from datetime import datetime
 from os.path import exists
 
 listaErroresBestDeal = []
+listaSinPrecio = []
 
 
 async def busqueda(seguimiento, indices, webBusqueda):
@@ -94,7 +95,7 @@ async def busqueda(seguimiento, indices, webBusqueda):
 					precioEncontrado = precio
 				else:
 					logging.info(str("La carta " + codigo + " no está a la venta"))
-					listaErroresBestDeal.append(str(codigo + " (Sin precio) " + url))
+					listaSinPrecio.append(str(codigo + " (Sin precio) " + url))
 			except ElementHandleError as e:
 				listaErroresBestDeal.append(str(codigo + " (ElementHandleError) " + url))
 				logging.error("Error leyendo el precio (ElementHandleError) %s" % url)
@@ -184,6 +185,7 @@ def main():
 		cantidadBusquedas = int(configParserUtils.getConfigParserGet(constants.CANTIDAD_BUSQUEDAS))
 		while vueltas < cantidadBusquedas:
 			listaErroresBestDeal.clear()
+			listaSinPrecio.clear()
 			telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), "Obteniendo/Refrescando seguimientos....")
 
 			forzarPrimeraBusqueda = False
@@ -224,6 +226,20 @@ def main():
 				ficheroErroresBestDeal.close()
 				telegramUtils.enviarFicheroTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), rutaFicheroErroresBestDeal)
 				os.remove(rutaFicheroErroresBestDeal)
+
+			enviarSinPrecio = configParserUtils.getConfigParserGet(constants.ENVIAR_SIN_PRECIO)
+			if enviarSinPrecio and enviarSinPrecio == "True":
+				textoSinPrecio = "No se ha encontrado precio en las cartas: "
+				if len(listaSinPrecio) > 0:
+					for sinPrecio in listaSinPrecio:
+						textoSinPrecio = str(textoSinPrecio + "\n\t" + sinPrecio)
+					logging.info(textoSinPrecio)
+					rutaFicheroSinPrecio = os.path.join(os.path.abspath(os.path.dirname(__file__)), str("SinPrecio.txt"))
+					ficheroSinPrecio = open(rutaFicheroSinPrecio, "w")
+					ficheroSinPrecio.write(textoSinPrecio)
+					ficheroSinPrecio.close()
+					telegramUtils.enviarFicheroTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), rutaFicheroSinPrecio)
+					os.remove(rutaFicheroSinPrecio)
 
 			telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), "Fin de escaneado en " + webBusqueda + " a las %s" % datetime.now().strftime("%H:%M"))
 			vueltas = vueltas + 1

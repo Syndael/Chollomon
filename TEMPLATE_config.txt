@@ -6,6 +6,7 @@ bucleInfinito = False
 buscarCartasNuevas = True
 descargarImagenes = True
 cantidadBusquedas = 1
+enviarSinPrecio = False
 # True busca en la primera vuelta cartas sin tener en cuenta la casilla busqueda
 forzarPrimeraBusqueda = True
 # 0 World, 1 Japon
