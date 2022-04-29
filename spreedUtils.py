@@ -142,6 +142,8 @@ def nuevaFila(nCarta, nMixCarta, urlImg, modo):
 	preciosMarket.append_row([nMixCarta])
 	preciosAux = getHoja(constants.SHEET_NAME_PRECIOS_AUX)
 	preciosAux.append_row([nMixCarta])
+	imgs = getHoja(constants.SHEET_NAME_IMGS)
+	imgs.append_row([nMixCarta])
 
 
 def getHoja(sheet):

@@ -44,6 +44,7 @@ SHEET_NAME_ALBUM = "Album"
 SHEET_NAME_PRECIOS_AUX = "Precios Aux"
 SHEET_NAME_PRECIOS_MARKET = "Precios Market"
 SHEET_NAME_PRECIOS_TRADER = "Precios Trader"
+SHEET_NAME_IMGS = "IMGs"
 
 FILA = "fila"
 
