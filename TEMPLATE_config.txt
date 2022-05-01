@@ -6,6 +6,8 @@ bucleInfinito = False
 buscarCartasNuevas = True
 descargarImagenes = True
 cantidadBusquedas = 1
+# Colecciones incluidas en busqueda
+coleccionesBusquedas =
 enviarSinPrecio = False
 # True busca en la primera vuelta cartas sin tener en cuenta la casilla busqueda
 forzarPrimeraBusqueda = True

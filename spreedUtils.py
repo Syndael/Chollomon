@@ -76,15 +76,21 @@ def getListaSeguimientos(forzarBusqueda):
 	indicesSeguimientos.append(getIndices(hoja))
 	cartas = hoja.get_all_records()
 	indiceFila = 2
+	coleccionesBusquedasConf = configParserUtils.getConfigParserGet(constants.COLECCIONES_BUSQUEDAS)
+	coleccionesBusquedas = []
+	for col in coleccionesBusquedasConf.split(constants.SEPARADOR_CONFIG):
+		coleccionesBusquedas.append(col.strip())
 	for carta in cartas:
 		numeroCarta = carta.get(constants.CODIGO)
 		buscar = carta.get(constants.BUSCAR)
-		if forzarBusqueda:
-			buscar = "TRUE"
-		if buscar and buscar == "TRUE" and numeroCarta and len(numeroCarta) > 0:
-			urlPrecio = carta.get(constants.URL_PRECIO)
-			if urlPrecio and len(urlPrecio) > 0:
-				seguimientos.append({constants.FILA: indiceFila, constants.URL_PRECIO: urlPrecio, constants.CODIGO: carta.get(constants.CODIGO), constants.ALARMA: carta.get(constants.ALARMA), constants.ACTUAL: carta.get(constants.ACTUAL), constants.MINIMO: carta.get(constants.MINIMO), constants.NOMBRE: carta.get(constants.NOMBRE)})
+		coleccion = numeroCarta.split("-")[0]
+		if len(coleccionesBusquedasConf.strip()) == 0 or coleccion in coleccionesBusquedas:
+			if forzarBusqueda:
+				buscar = "TRUE"
+			if buscar and buscar == "TRUE" and numeroCarta and len(numeroCarta) > 0:
+				urlPrecio = carta.get(constants.URL_PRECIO)
+				if urlPrecio and len(urlPrecio) > 0:
+					seguimientos.append({constants.FILA: indiceFila, constants.URL_PRECIO: urlPrecio, constants.CODIGO: carta.get(constants.CODIGO), constants.ALARMA: carta.get(constants.ALARMA), constants.ACTUAL: carta.get(constants.ACTUAL), constants.MINIMO: carta.get(constants.MINIMO), constants.NOMBRE: carta.get(constants.NOMBRE)})
 		indiceFila = indiceFila + 1
 	logging.info(str("Se buscarán " + str(len(seguimientos)) + " de las " + str((indiceFila - 1)) + " filas leidas en total"))
 	indicesSeguimientos.append(seguimientos)
