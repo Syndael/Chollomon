@@ -148,6 +148,7 @@ def main():
 	telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), "El bot ha iniciado su ejecución a las %s" % datetime.now().strftime("%H:%M"))
 	bucleInfinito = True
 	bucleInfinitoParam = configParserUtils.getConfigParserGet(constants.BUCLE_INFINITO)
+	coleccionesBusquedas = configParserUtils.getConfigParserGet(constants.COLECCIONES_BUSQUEDAS)
 
 	while bucleInfinito:
 		if bucleInfinitoParam == "False":
@@ -179,6 +180,8 @@ def main():
 
 		logging.info("------------------------------------------------------------")
 		logging.info("Inicio listado")
+		if len(coleccionesBusquedas) != 0:
+			logging.info(coleccionesBusquedas)
 		logging.info("------------------------------------------------------------")
 
 		vueltas = 0
@@ -186,7 +189,10 @@ def main():
 		while vueltas < cantidadBusquedas:
 			listaErroresBestDeal.clear()
 			listaSinPrecio.clear()
-			telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), "Obteniendo/Refrescando seguimientos....")
+			if len(coleccionesBusquedas) != 0:
+				telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), "Obteniendo/Refrescando seguimientos.... " + coleccionesBusquedas)
+			else:
+				telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), "Obteniendo/Refrescando seguimientos....")
 
 			forzarPrimeraBusqueda = False
 			forzarPrimeraBusquedaConf = configParserUtils.getConfigParserGet(constants.FORZAR_PRIMERA_BUSQUEDA)
@@ -202,7 +208,11 @@ def main():
 			else:
 				logging.error("No se ha definido modo de escaneo")
 				raise Exception("No se ha definido modo de escaneo")
-			mensajeEscaneo = str("Escaneando listado(" + str(len(indicesSeguimientos[1])) + ") en " + webBusqueda + " a las " + datetime.now().strftime("%H:%M"))
+
+			mensajeEscaneo = str("Escaneando listado(" + str(len(indicesSeguimientos[1])))
+			if len(coleccionesBusquedas) != 0:
+				mensajeEscaneo = mensajeEscaneo + str(" cartas de " + coleccionesBusquedas)
+			mensajeEscaneo = mensajeEscaneo + str(") en " + webBusqueda + " a las " + datetime.now().strftime("%H:%M"))
 			telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), mensajeEscaneo)
 			logging.info(mensajeEscaneo)
 			for seg in indicesSeguimientos[1]:
@@ -211,7 +221,7 @@ def main():
 						logging.info(str("Buscando la carta " + seg.get(constants.NOMBRE) + "(" + seg.get(constants.CODIGO) + ") en " + webBusqueda + " con alarma por " + str(seg.get(constants.ALARMA)).replace(" ", "")))
 					else:
 						logging.info(str("Buscando la carta " + seg.get(constants.NOMBRE) + "(" + seg.get(constants.CODIGO) + ") en " + webBusqueda))
-					asyncio.get_event_loop().run_until_complete(asyncio.wait_for(busqueda(seg, indicesSeguimientos[0], webBusqueda), timeout=30.0))
+					asyncio.get_event_loop().run_until_complete(asyncio.wait_for(busqueda(seg, indicesSeguimientos[0], webBusqueda), timeout=60.0))
 				except Exception as e:
 					logging.error("Error al buscar precio en %s" % seg.get(constants.URL_PRECIO), exc_info=e)
 
@@ -241,12 +251,18 @@ def main():
 					telegramUtils.enviarFicheroTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), rutaFicheroSinPrecio)
 					os.remove(rutaFicheroSinPrecio)
 
-			telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), "Fin de escaneado en " + webBusqueda + " a las %s" % datetime.now().strftime("%H:%M"))
+			msgFinScan = "Fin de escaneado"
+			if len(coleccionesBusquedas) != 0:
+				msgFinScan = msgFinScan + str("(" + coleccionesBusquedas + ")")
+			msgFinScan = msgFinScan + str(" en " + webBusqueda + " a las %s" % datetime.now().strftime("%H:%M"))
+			telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), msgFinScan)
 			vueltas = vueltas + 1
 
 	telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), "El bot ha terminado su ejecución a las %s" % datetime.now().strftime("%H:%M"))
 	logging.info("------------------------------------------------------------")
 	logging.info("Fin listado")
+	if len(coleccionesBusquedas) != 0:
+		logging.info(coleccionesBusquedas)
 	logging.info("------------------------------------------------------------")
 
 
