@@ -14,7 +14,7 @@ from os.path import exists
 def descargarImgs():
 	imgs = spreedUtils.getListaImagenes()
 	for img in imgs:
-		nombreImg = str("img_" + img.get(constants.CODIGO) + ".png")
+		nombreImg = constants.FORMATEO_IMG.format(img.get(constants.CODIGO))
 		rutaImg = os.path.join(os.path.abspath(os.path.dirname(__file__)), "img", nombreImg)
 		if not exists(rutaImg):
 			rutaDescarga = descargarImg(nombreImg, img.get(constants.URL_IMAGEN), rutaImg)

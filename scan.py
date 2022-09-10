@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import time
 
 import configParserUtils
 import constants
@@ -149,6 +150,10 @@ def main():
 	bucleInfinito = True
 	bucleInfinitoParam = configParserUtils.getConfigParserGet(constants.BUCLE_INFINITO)
 	coleccionesBusquedas = configParserUtils.getConfigParserGet(constants.COLECCIONES_BUSQUEDAS)
+	tiempoMinimoBusquedaStr = configParserUtils.getConfigParserGet(constants.TIEMPO_MINIMO_BUSQUEDA)
+	tiempoMinimoBusqueda = 8
+	if len(tiempoMinimoBusquedaStr) != 0:
+		tiempoMinimoBusqueda = int(tiempoMinimoBusquedaStr)
 
 	while bucleInfinito:
 		if bucleInfinitoParam == "False":
@@ -217,11 +222,16 @@ def main():
 			logging.info(mensajeEscaneo)
 			for seg in indicesSeguimientos[1]:
 				try:
+					antesEnvio = datetime.now()
 					if len(seg) > 2 and seg.get(constants.ALARMA):
 						logging.info(str("Buscando la carta " + seg.get(constants.NOMBRE) + "(" + seg.get(constants.CODIGO) + ") en " + webBusqueda + " con alarma por " + str(seg.get(constants.ALARMA)).replace(" ", "")))
 					else:
 						logging.info(str("Buscando la carta " + seg.get(constants.NOMBRE) + "(" + seg.get(constants.CODIGO) + ") en " + webBusqueda))
-					asyncio.get_event_loop().run_until_complete(asyncio.wait_for(busqueda(seg, indicesSeguimientos[0], webBusqueda), timeout=60.0))
+					asyncio.get_event_loop().run_until_complete(asyncio.wait_for(busqueda(seg, indicesSeguimientos[0], webBusqueda), timeout=30.0))
+					despuessEnvio = datetime.now()
+					tiempoEnvio = despuessEnvio - antesEnvio
+					if tiempoEnvio.total_seconds() < tiempoMinimoBusqueda:
+						time.sleep(tiempoMinimoBusqueda - tiempoEnvio.total_seconds())
 				except Exception as e:
 					logging.error("Error al buscar precio en %s" % seg.get(constants.URL_PRECIO), exc_info=e)
 

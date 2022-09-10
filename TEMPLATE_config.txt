@@ -9,14 +9,23 @@ cantidadBusquedas = 1
 # Colecciones incluidas en busqueda
 coleccionesBusquedas =
 enviarSinPrecio = False
+# Copiar formulas en las celdas si es valor es 1
+copiarFormula = 0
+# Busca e inserta los datos de digimoncard.io/api-public si el valor es 1
+copiarDatosGenerales = 1
+# Busca e inserta la URL de la imagen si el valor es 1
+copiarImagen = 1
 # True busca en la primera vuelta cartas sin tener en cuenta la casilla busqueda
 forzarPrimeraBusqueda = True
-# 0 World, 1 Japon
-modoBuscador = 0
+# 0 World, 1 Japon, 2 Global B+
+modoBuscador = 2
 # 0 Trader, 1 Market
 modoEscaneo = 0
 telegramBotToken =
 telegramChatCanalChollosId =
 telegramChatCanalCartasId =
 telegramLogChatId =
+tiempoMinimoBusqueda =
+tiempoMinimoBusquedaSpreadsheet = 
+tiempoMinimoBusquedaTelegram = 
 workbookName = Digimon
