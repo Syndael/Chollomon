@@ -45,26 +45,19 @@ def getListaImagenes():
 	return imagenes
 
 
-def getNumerosCartas():
-	hoja = getHoja(constants.SHEET_NAME_ALBUM)
+def getNumerosCartas(columna):
+	hoja = getHoja(constants.SHEET_NAME_DATOS)
 	numeros = []
 	cartas = hoja.get_all_records()
 	indiceFila = 2
-	for carta in cartas:
-		numeroCarta = carta.get(constants.CODIGO)
-		if numeroCarta and len(numeroCarta) > 0:
-			numeros.append(numeroCarta)
-		indiceFila = indiceFila + 1
-	return numeros
 
+	if columna:
+		indiceColumna = columna
+	else:
+		indiceColumna = constants.CODIGO
 
-def getNumerosMixCartas():
-	hoja = getHoja(constants.SHEET_NAME_ALBUM)
-	numeros = []
-	cartas = hoja.get_all_records()
-	indiceFila = 2
 	for carta in cartas:
-		numeroCarta = carta.get(constants.CODIGO)
+		numeroCarta = carta.get(indiceColumna)
 		if numeroCarta and len(numeroCarta) > 0:
 			numeros.append(numeroCarta)
 		indiceFila = indiceFila + 1
@@ -107,7 +100,11 @@ def getCartasSinImagen():
 	indiceFila = 2
 	for carta in cartas:
 		codCarta = carta.get(constants.CODIGO)
-		urlImagen = carta.get(constants.URL_IMAGEN)
+		if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "1":
+			columnaImg = constants.URL_JAPO
+		else:
+			columnaImg = constants.URL_IMAGEN
+		urlImagen = carta.get(columnaImg)
 		if codCarta and len(codCarta) > 0 and (urlImagen is None or urlImagen == ''):
 			numeros.append({constants.CODIGO: carta.get(constants.CODIGO), constants.FILA: indiceFila})
 		indiceFila = indiceFila + 1
@@ -164,7 +161,8 @@ def getIndices(hoja):
 		constants.TIPO: 0,
 		constants.URL_IMAGEN: 0,
 		constants.URL_JAPO: 0,
-		constants.URL_PRECIO: 0
+		constants.URL_PRECIO: 0,
+		constants.CODIGOJP: 0
 	}
 
 	for tituloIndex in range(len(titulos)):
@@ -207,11 +205,13 @@ def getIndices(hoja):
 			indicesCampos[constants.URL_JAPO] = tituloIndex + 1
 		elif titulo == constants.URL_PRECIO:
 			indicesCampos[constants.URL_PRECIO] = tituloIndex + 1
+		elif titulo == constants.CODIGOJP:
+			indicesCampos[constants.CODIGOJP] = tituloIndex + 1
 
 	return indicesCampos
 
 
-def nuevaFila(nMixCarta):
+def nuevaFila(nMixCarta, nMixCartaJp):
 	album = getHoja(constants.SHEET_NAME_ALBUM)
 	album.append_row([nMixCarta])
 	preciosTrader = getHoja(constants.SHEET_NAME_PRECIOS_TRADER)
@@ -223,7 +223,11 @@ def nuevaFila(nMixCarta):
 	imgs = getHoja(constants.SHEET_NAME_IMGS)
 	imgs.append_row([nMixCarta])
 	datos = getHoja(constants.SHEET_NAME_DATOS)
-	datos.append_row([nMixCarta])
+	row = datos.append_row([nMixCarta])
+	if nMixCartaJp:
+		indices = getIndices(datos)
+		indiceFilaActualizada = int(str(row.get('updates').get('updatedRange')).replace('Datos!A', ''))
+		datos.update_cell(indiceFilaActualizada, indices.get(constants.CODIGOJP), nMixCartaJp)
 
 
 def rellenarDatos(indice, nCarta):
@@ -300,7 +304,11 @@ def limpiarSimbolos(txt):
 def rellenarImagen(indice, urlImagen):
 	datos = getHoja(constants.SHEET_NAME_DATOS)
 	indices = getIndices(datos)
-	datos.update_cell(indice, indices.get(constants.URL_IMAGEN), urlImagen)
+	if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "1":
+		columnaImg = constants.URL_JAPO
+	else:
+		columnaImg = constants.URL_IMAGEN
+	datos.update_cell(indice, indices.get(columnaImg), urlImagen)
 
 	tiempoMinimoBusquedaSpreadsheetStr = configParserUtils.getConfigParserGet(constants.TIEMPO_MINIMO_BUSQUEDA_SPREADSHEET)
 	tiempoMinimoBusquedaSpreadsheet = 30
@@ -341,8 +349,8 @@ def rellenarFormula(indice):
 	album.update(str('AD' + str(indice)), constants.FRM_AL_AD.format(indice), raw=False)
 	album.update(str('AE' + str(indice)), constants.FRM_AL_AE.format(indice, indice, indice, indice, indice, indice, indice, indice), raw=False)
 
-	datos.update(str('B' + str(indice)), constants.FRM_DA_B.format(indice), raw=False)
-	datos.update(str('C' + str(indice)), constants.FRM_DA_C.format(indice, indice, indice, indice, indice, indice), raw=False)
+	datos.update(str('C' + str(indice)), constants.FRM_DA_C.format(indice), raw=False)
+	datos.update(str('D' + str(indice)), constants.FRM_DA_D.format(indice, indice, indice, indice, indice, indice), raw=False)
 
 	time.sleep(tiempoMinimoBusquedaSpreadsheet)
 

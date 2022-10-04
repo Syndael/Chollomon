@@ -44,7 +44,7 @@ def buscarCartas(prefijo, cantidad, formateo, cartasMix):
 					addCarta(numCarta, formateoConst)
 					descargarAlters(cartasMix, numCarta)
 		except Exception as ex:
-			logging.error("Error buscando la carta {}".format(numCarta), ex)
+			logging.error("Error buscando la carta {}".format(str(prefijo + constants.SEPARADOR_TEMP + formateo.format(cartaIndex))), ex)
 		cartaIndex = cartaIndex + 1
 
 
@@ -86,7 +86,10 @@ def descargarAlter(cartasMix, numCarta, modo):
 
 def addCarta(numCarta, formateo):
 	logging.info('Añadiendo {}'.format(numCarta))
-	spreedUtils.nuevaFila(numCarta)
+	if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "1":
+		spreedUtils.nuevaFila(numCarta, numCarta)
+	else:
+		spreedUtils.nuevaFila(numCarta, None)
 	urlImg = formatUrlCarta(formateo.format(numCarta))
 	imgDownloader.descargarImg(constants.FORMATEO_IMG.format(numCarta), urlImg)
 	listaCNNum.append({constants.CODIGO: numCarta, constants.URL_IMAGEN: urlImg})
@@ -111,7 +114,11 @@ def descargarImg(numCarta, formateo):
 
 
 def buscarCartasNuevas():
-	cartasMix = {c: None for c in spreedUtils.getNumerosMixCartas()}.keys()
+	if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "1":
+		cartasMix = {c: None for c in spreedUtils.getNumerosCartas(constants.CODIGOJP)}.keys()
+	else:
+		cartasMix = {c: None for c in spreedUtils.getNumerosCartas(constants.CODIGO)}.keys()
+
 	categorias = [
 		{constants.PREFIJO: constants.PRE_TEMP_BT, constants.TEMPORADA: True, constants.CANTIDAD: 999, constants.FORMAT: '{0:03d}'},
 		{constants.PREFIJO: constants.PRE_TEMP_P, constants.TEMPORADA: False, constants.CANTIDAD: 999, constants.FORMAT: '{0:03d}'},
@@ -155,8 +162,8 @@ def enviarTelegram():
 			rutaImg = os.path.join(os.path.abspath(os.path.dirname(__file__)), "img", nombreImg)
 			telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_CHAT_CANAL_CARTAS_ID), str("Nueva carta añadida " + numCarta + " " + textoExtra + " " + carta.get(constants.URL_IMAGEN)), rutaImg)
 			time.sleep(tiempoMinimoBusquedaTelegram)
-		except Exception as e:
-			logging.error("Error notificando la carta {}".format(numCarta), e)
+		except Exception as exc:
+			logging.error("Error notificando la carta {}".format(carta.get(constants.CODIGO)), exc)
 	listaCNNum.clear()
 
 
