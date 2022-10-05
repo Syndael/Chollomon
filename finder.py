@@ -132,6 +132,8 @@ def buscarCartasNuevas():
 			while not ultimaTemporada:
 				temporada = str(categoria.get(constants.PREFIJO) + str(temporadaIndex))
 				ultimaTemporada = buscarCartas(temporada, categoria.get(constants.CANTIDAD), categoria.get(constants.FORMAT), cartasMix)
+				if temporada != 'ST11':
+					ultimaTemporada = False
 				temporadaIndex = temporadaIndex + 1
 				enviarTelegram()
 		elif not categoria.get(constants.TEMPORADA):
