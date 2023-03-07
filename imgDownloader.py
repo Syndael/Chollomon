@@ -15,21 +15,21 @@ def descargarImgs():
 	imgs = spreedUtils.getListaImagenes()
 	for img in imgs:
 		nombreImg = constants.FORMATEO_IMG.format(img.get(constants.CODIGO))
-		rutaImg = os.path.join(os.path.abspath(os.path.dirname(__file__)), "img", nombreImg)
+		rutaImg = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'img', nombreImg)
 		if not exists(rutaImg):
 			rutaDescarga = descargarImg(nombreImg, img.get(constants.URL_IMAGEN), rutaImg)
 			if os.path.getsize(rutaDescarga) < constants.TAMANHO_MIN_IMG:
 				os.remove(rutaDescarga)
 		else:
-			logging.debug(str("No se descarga la " + img.get(constants.CODIGO)))
+			logging.debug(str('No se descarga la ' + img.get(constants.CODIGO)))
 
 
 def descargarImg(nombreImg, url, rutaImg=None):
-	logging.info(str("Descargando " + nombreImg + " " + url))
+	logging.info(str('Descargando ' + nombreImg + ' ' + url))
 	if rutaImg:
 		rutaFinal = rutaImg
 	else:
-		rutaFinal = os.path.join(os.path.abspath(os.path.dirname(__file__)), "img", nombreImg)
+		rutaFinal = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'img', nombreImg)
 
 	f = open(rutaFinal, 'wb')
 	response = requests.get(url)

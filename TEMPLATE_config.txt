@@ -15,6 +15,8 @@ copiarFormula = 0
 copiarDatosGenerales = 1
 # Busca e inserta la URL de la imagen si el valor es 1
 copiarImagen = 1
+# Busca e inserta el codigo de la imagen si el valor es 1
+copiarCodigoImagen = 1
 # True busca en la primera vuelta cartas sin tener en cuenta la casilla busqueda
 forzarPrimeraBusqueda = True
 # 0 World, 1 Japon, 2 Global B+

@@ -11,42 +11,62 @@ logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', datefmt=
 from datetime import datetime
 
 
-def rellenarImagen(indice, numCarta):
-	logging.info("Rellando imagen de la carta {}".format(numCarta))
-
-	formateoConst = constants.FORMATEO_1
-	rutaImg = finder.descargarImg(numCarta, formateoConst)
-	if os.path.getsize(rutaImg) < constants.TAMANHO_MIN_IMG:
-		formateoConst = constants.FORMATEO_2
-		rutaImg = finder.descargarImg(numCarta, formateoConst)
-	if os.path.getsize(rutaImg) < constants.TAMANHO_MIN_IMG:
-		formateoConst = constants.FORMATEO_3
-		rutaImg = finder.descargarImg(numCarta, formateoConst)
-	if os.path.getsize(rutaImg) > constants.TAMANHO_MIN_IMG:
-		spreedUtils.rellenarImagen(indice, finder.formatUrlCarta(formateoConst.format(numCarta)))
-
-
 def rellenarCartas():
-	if configParserUtils.getConfigParserGet(constants.COPIAR_FORMULA) == "1":
+	if configParserUtils.getConfigParserGet(constants.COPIAR_FORMULA) == '1':
 		for carta in spreedUtils.getCartasSinFormulas():
-			logging.info('Copiando formulas de {}'.format(carta.get(constants.CODIGO)))
+			logging.info('COPIAR_FORMULA {0}'.format(carta.get(constants.CODIGO)))
 			spreedUtils.rellenarFormula(carta.get(constants.FILA))
 
-	if configParserUtils.getConfigParserGet(constants.COPIAR_DATOS_GENERALES) == "1":
+	if configParserUtils.getConfigParserGet(constants.COPIAR_DATOS_GENERALES) == '1':
 		for carta in spreedUtils.getCartasSinDatos():
+			logging.info('COPIAR_DATOS_GENERALES de {0}'.format(carta.get(constants.CODIGO)))
 			spreedUtils.rellenarDatos(carta.get(constants.FILA), carta.get(constants.NUMERO))
 
-	if configParserUtils.getConfigParserGet(constants.COPIAR_IMAGEN) == "1":
+	if configParserUtils.getConfigParserGet(constants.COPIAR_CODIGO_IMAGEN) == '1':
+		if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == '2' or configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == '0':
+			for carta in spreedUtils.getCartasSinCodigoEu():
+				logging.info('COPIAR_CODIGOS_EU de {0}'.format(carta.get(constants.CODIGO)))
+				cod = finder.buscarCodigoImagen(carta.get(constants.CODIGO))
+				if cod:
+					spreedUtils.rellenarCodigoEu(carta.get(constants.FILA), cod)
+
+		if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == '1':
+			for carta in spreedUtils.getCartasSinCodigoJp():
+				logging.info('COPIAR_CODIGOS_JP de {0}'.format(carta.get(constants.CODIGO)))
+				cod = finder.buscarCodigoImagen(carta.get(constants.CODIGO))
+				if cod:
+					spreedUtils.rellenarCodigoJp(carta.get(constants.FILA), cod)
+
+	if configParserUtils.getConfigParserGet(constants.COPIAR_IMAGEN) == '1':
 		for carta in spreedUtils.getCartasSinImagen():
-			rellenarImagen(carta.get(constants.FILA), carta.get(constants.CODIGO).replace(constants.TAG_SELLADO, ""))
+			if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == '1':
+				codCarta = carta.get(constants.CODIGOJP)
+			else:
+				codCarta = carta.get(constants.CODIGO)
+			if codCarta:
+				logging.info('COPIAR_IMAGEN de {0}'.format(codCarta))
+				cod = finder.buscarCodigoImagen(codCarta.replace(constants.TAG_SELLADO, ''))
+				if cod:
+					spreedUtils.rellenarImagen(carta.get(constants.FILA), finder.formatUrlCarta(cod))
 
 
 if __name__ == '__main__':
 	try:
-		telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), "Rellenando datos a las %s" % datetime.now().strftime("%H:%M"))
+		frm = configParserUtils.getConfigParserGet(constants.COPIAR_FORMULA)
+		datos = configParserUtils.getConfigParserGet(constants.COPIAR_DATOS_GENERALES)
+		codImg = configParserUtils.getConfigParserGet(constants.COPIAR_CODIGO_IMAGEN)
+		img = configParserUtils.getConfigParserGet(constants.COPIAR_IMAGEN)
+		buscador = configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR)
+		if buscador == '0':
+			buscador = 'EU Old'
+		elif buscador == '1':
+			buscador = 'JP'
+		elif buscador == '2':
+			buscador = 'EU'
+		telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), 'Rellenando datos a las {}, Formulas {}, Datos {}, Codigo img {}, Imagen {}, Buscador {}'.format(datetime.now().strftime('%H:%M'), frm, datos, codImg, img, buscador))
 		rellenarCartas()
-		telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), "Fin relleno datos a las %s" % datetime.now().strftime("%H:%M"))
+		telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), 'Fin relleno datos a las %s' % datetime.now().strftime('%H:%M'))
 	except Exception as e:
-		msgError = "Error rellenado datos"
+		msgError = 'Error rellenado datos'
 		logging.error(msgError, e)
 		telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), msgError)

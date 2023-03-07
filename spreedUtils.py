@@ -17,29 +17,29 @@ def actualizarPrecios(actual, minimo, alarma, indiceFila, indices):
 	hoja = getHojaPrecios()
 	if actual:
 		columnaActual = indices.get(constants.ACTUAL)
-		logging.debug(str("Actualizando el precio actual " + str(actual) + " en la col " + str(columnaActual) + " fil " + str(indiceFila)))
+		logging.debug(str('Actualizando el precio actual ' + str(actual) + ' en la col ' + str(columnaActual) + ' fil ' + str(indiceFila)))
 		hoja.update_cell(indiceFila, columnaActual, actual)
 	if minimo:
 		columnaMinima = indices.get(constants.MINIMO)
 		columnaFminima = indices.get(constants.FMINIMO)
-		logging.debug(str("Actualizando el precio minimo " + str(minimo) + " en la col " + str(columnaMinima) + " fil " + str(indiceFila)))
+		logging.debug(str('Actualizando el precio minimo ' + str(minimo) + ' en la col ' + str(columnaMinima) + ' fil ' + str(indiceFila)))
 		hoja.update_cell(indiceFila, columnaMinima, minimo)
-		hoja.update_cell(indiceFila, columnaFminima, datetime.now().strftime("%d/%m/%Y %H:%M"))
+		hoja.update_cell(indiceFila, columnaFminima, datetime.now().strftime('%d/%m/%Y %H:%M'))
 	if alarma:
 		columnaAlarma = indices.get(constants.ALARMA)
-		logging.debug(str("Actualizando el precio alarma " + str(alarma) + " en la col " + str(columnaAlarma) + " fil " + str(indiceFila)))
+		logging.debug(str('Actualizando el precio alarma ' + str(alarma) + ' en la col ' + str(columnaAlarma) + ' fil ' + str(indiceFila)))
 		hoja.update_cell(indiceFila, columnaAlarma, alarma)
 
 
 def getListaImagenes():
-	hoja = getHoja(constants.SHEET_NAME_ALBUM)
+	hoja = getHoja(constants.SHEET_NAME_DATOS)
 	imagenes = []
 	cartas = hoja.get_all_records()
 	indiceFila = 2
 	for carta in cartas:
 		numeroCarta = carta.get(constants.CODIGO)
 		urlImg = carta.get(constants.URL_IMAGEN)
-		if numeroCarta and len(numeroCarta) > 0 and urlImg and len(urlImg) > 0:
+		if numeroCarta and len(numeroCarta) > 0 and urlImg and len(urlImg) > 0 and urlImg != '-':
 			imagenes.append({constants.CODIGO: numeroCarta, constants.URL_IMAGEN: urlImg})
 		indiceFila = indiceFila + 1
 	return imagenes
@@ -65,7 +65,7 @@ def getNumerosCartas(columna):
 
 
 def getCartasSinFormulas():
-	hoja = getHoja(constants.SHEET_NAME_ALBUM)
+	hoja = getHoja(constants.SHEET_NAME_DATOS)
 	numeros = []
 	cartas = hoja.get_all_records()
 	indiceFila = 2
@@ -93,6 +93,29 @@ def getCartasSinDatos():
 	return numeros
 
 
+def getCartasSinCodigoEuJp(codigoBusqueda):
+	hoja = getHoja(constants.SHEET_NAME_DATOS)
+	numeros = []
+	cartas = hoja.get_all_records()
+	indiceFila = 2
+	for carta in cartas:
+		codCarta = carta.get(constants.CODIGO)
+		numCarta = carta.get(constants.NUMERO)
+		codCartaAux = carta.get(codigoBusqueda)
+		if codCarta and len(codCarta) > 0 and (codCartaAux is None or codCartaAux == ''):
+			numeros.append({constants.CODIGO: carta.get(constants.CODIGO), codigoBusqueda: carta.get(codigoBusqueda), constants.FILA: indiceFila, constants.NUMERO: numCarta})
+		indiceFila = indiceFila + 1
+	return numeros
+
+
+def getCartasSinCodigoEu():
+	return getCartasSinCodigoEuJp(constants.CODIGOEU);
+
+
+def getCartasSinCodigoJp():
+	return getCartasSinCodigoEuJp(constants.CODIGOJP);
+
+
 def getCartasSinImagen():
 	hoja = getHoja(constants.SHEET_NAME_DATOS)
 	numeros = []
@@ -100,13 +123,17 @@ def getCartasSinImagen():
 	indiceFila = 2
 	for carta in cartas:
 		codCarta = carta.get(constants.CODIGO)
-		if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "1":
+		if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == '2':
+			codCarta = carta.get(constants.CODIGOEU)
+		codCartaJp = carta.get(constants.CODIGOJP)
+		numCarta = carta.get(constants.NUMERO)
+		if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == '1':
 			columnaImg = constants.URL_JAPO
 		else:
 			columnaImg = constants.URL_IMAGEN
 		urlImagen = carta.get(columnaImg)
 		if codCarta and len(codCarta) > 0 and (urlImagen is None or urlImagen == ''):
-			numeros.append({constants.CODIGO: carta.get(constants.CODIGO), constants.FILA: indiceFila})
+			numeros.append({constants.CODIGO: codCarta, constants.FILA: indiceFila, constants.CODIGOJP: codCartaJp, constants.NUMERO: numCarta})
 		indiceFila = indiceFila + 1
 	return numeros
 
@@ -125,16 +152,16 @@ def getListaSeguimientos(forzarBusqueda):
 	for carta in cartas:
 		numeroCarta = carta.get(constants.CODIGO)
 		buscar = carta.get(constants.BUSCAR)
-		coleccion = numeroCarta.split("-")[0]
+		coleccion = numeroCarta.split('-')[0]
 		if len(coleccionesBusquedasConf.strip()) == 0 or coleccion in coleccionesBusquedas:
 			if forzarBusqueda:
-				buscar = "TRUE"
-			if buscar and buscar == "TRUE" and numeroCarta and len(numeroCarta) > 0:
+				buscar = 'TRUE'
+			if buscar and buscar == 'TRUE' and numeroCarta and len(numeroCarta) > 0:
 				urlPrecio = carta.get(constants.URL_PRECIO)
 				if urlPrecio and len(urlPrecio) > 0:
 					seguimientos.append({constants.FILA: indiceFila, constants.URL_PRECIO: urlPrecio, constants.CODIGO: carta.get(constants.CODIGO), constants.ALARMA: carta.get(constants.ALARMA), constants.ACTUAL: carta.get(constants.ACTUAL), constants.MINIMO: carta.get(constants.MINIMO), constants.NOMBRE: carta.get(constants.NOMBRE)})
 		indiceFila = indiceFila + 1
-	logging.info(str("Se buscarán " + str(len(seguimientos)) + " de las " + str((indiceFila - 1)) + " filas leidas en total"))
+	logging.info(str('Se buscarán ' + str(len(seguimientos)) + ' de las ' + str((indiceFila - 1)) + ' filas leidas en total'))
 	indicesSeguimientos.append(seguimientos)
 	logging.debug(indicesSeguimientos)
 	return indicesSeguimientos
@@ -162,7 +189,8 @@ def getIndices(hoja):
 		constants.URL_IMAGEN: 0,
 		constants.URL_JAPO: 0,
 		constants.URL_PRECIO: 0,
-		constants.CODIGOJP: 0
+		constants.CODIGOJP: 0,
+		constants.CODIGOEU: 0
 	}
 
 	for tituloIndex in range(len(titulos)):
@@ -207,11 +235,13 @@ def getIndices(hoja):
 			indicesCampos[constants.URL_PRECIO] = tituloIndex + 1
 		elif titulo == constants.CODIGOJP:
 			indicesCampos[constants.CODIGOJP] = tituloIndex + 1
+		elif titulo == constants.CODIGOEU:
+			indicesCampos[constants.CODIGOEU] = tituloIndex + 1
 
 	return indicesCampos
 
 
-def nuevaFila(nMixCarta, nMixCartaJp):
+def nuevaFila(nMixCarta):
 	album = getHoja(constants.SHEET_NAME_ALBUM)
 	album.append_row([nMixCarta])
 	preciosTrader = getHoja(constants.SHEET_NAME_PRECIOS_TRADER)
@@ -223,11 +253,28 @@ def nuevaFila(nMixCarta, nMixCartaJp):
 	imgs = getHoja(constants.SHEET_NAME_IMGS)
 	imgs.append_row([nMixCarta])
 	datos = getHoja(constants.SHEET_NAME_DATOS)
-	row = datos.append_row([nMixCarta])
-	if nMixCartaJp:
-		indices = getIndices(datos)
-		indiceFilaActualizada = int(str(row.get('updates').get('updatedRange')).replace('Datos!A', ''))
-		datos.update_cell(indiceFilaActualizada, indices.get(constants.CODIGOJP), nMixCartaJp)
+	datos.append_row([nMixCarta])
+
+
+def rellenarCodigoJp(indice, codCarta):
+	rellenarCodigoEuJp(indice, constants.CODIGOJP, codCarta)
+
+
+def rellenarCodigoEu(indice, codCarta):
+	rellenarCodigoEuJp(indice, constants.CODIGOEU, codCarta)
+
+
+def rellenarCodigoEuJp(indice, campo, codCarta):
+	datos = getHoja(constants.SHEET_NAME_DATOS)
+	indices = getIndices(datos)
+	logging.info('Buscando y rellenando el {} con {}'.format(campo, codCarta))
+	datos.update_cell(indice, indices.get(campo), codCarta)
+
+	tiempoMinimoBusquedaSpreadsheetStr = configParserUtils.getConfigParserGet(constants.TIEMPO_MINIMO_BUSQUEDA_SPREADSHEET)
+	tiempoMinimoBusquedaSpreadsheet = 30
+	if len(tiempoMinimoBusquedaSpreadsheetStr) != 0:
+		tiempoMinimoBusquedaSpreadsheet = int(tiempoMinimoBusquedaSpreadsheetStr)
+	time.sleep(tiempoMinimoBusquedaSpreadsheet)
 
 
 def rellenarDatos(indice, nCarta):
@@ -298,13 +345,13 @@ def rellenarDatos(indice, nCarta):
 
 
 def limpiarSimbolos(txt):
-	return txt.replace("&lt;", "<").replace("&gt;", ">").replace("&#91;", "[")
+	return txt.replace('&lt;', '<').replace('&gt;', '>').replace('&#91;', '[')
 
 
 def rellenarImagen(indice, urlImagen):
 	datos = getHoja(constants.SHEET_NAME_DATOS)
 	indices = getIndices(datos)
-	if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "1":
+	if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == '1':
 		columnaImg = constants.URL_JAPO
 	else:
 		columnaImg = constants.URL_IMAGEN
@@ -318,11 +365,7 @@ def rellenarImagen(indice, urlImagen):
 
 
 def rellenarFormula(indice):
-	album = getHoja(constants.SHEET_NAME_ALBUM)
 	datos = getHoja(constants.SHEET_NAME_DATOS)
-	preciosMarket = getHoja(constants.SHEET_NAME_PRECIOS_MARKET)
-	preciosTrader = getHoja(constants.SHEET_NAME_PRECIOS_TRADER)
-	imgs = getHoja(constants.SHEET_NAME_IMGS)
 
 	tiempoMinimoBusquedaSpreadsheetStr = configParserUtils.getConfigParserGet(constants.TIEMPO_MINIMO_BUSQUEDA_SPREADSHEET)
 	tiempoMinimoBusquedaSpreadsheet = 30
@@ -331,54 +374,10 @@ def rellenarFormula(indice):
 
 	time.sleep(tiempoMinimoBusquedaSpreadsheet)
 
-	album.update(str('B' + str(indice)), constants.FRM_AL_B.format(indice), raw=False)
-	album.update(str('H' + str(indice)), constants.FRM_AL_H.format(indice, indice), raw=False)
-	album.update(str('I' + str(indice)), constants.FRM_AL_I.format(indice), raw=False)
-	album.update(str('K' + str(indice)), constants.FRM_AL_K.format(indice), raw=False)
-	album.update(str('L' + str(indice)), constants.FRM_AL_L.format(indice), raw=False)
-	album.update(str('M' + str(indice)), constants.FRM_AL_M.format(indice), raw=False)
-	album.update(str('N' + str(indice)), constants.FRM_AL_N.format(indice), raw=False)
-	album.update(str('O' + str(indice)), constants.FRM_AL_O.format(indice), raw=False)
-	album.update(str('P' + str(indice)), constants.FRM_AL_P.format(indice), raw=False)
-	album.update(str('V' + str(indice)), constants.FRM_AL_V.format(indice, indice), raw=False)
-	album.update(str('Y' + str(indice)), constants.FRM_AL_Y.format(indice, indice, indice), raw=False)
-	album.update(str('Z' + str(indice)), constants.FRM_AL_Z.format(indice), raw=False)
-	album.update(str('AA' + str(indice)), constants.FRM_AL_AA.format(indice), raw=False)
-	album.update(str('AB' + str(indice)), constants.FRM_AL_AB.format(indice), raw=False)
-	album.update(str('AC' + str(indice)), constants.FRM_AL_AC.format(indice), raw=False)
-	album.update(str('AD' + str(indice)), constants.FRM_AL_AD.format(indice), raw=False)
-	album.update(str('AE' + str(indice)), constants.FRM_AL_AE.format(indice, indice, indice, indice, indice, indice, indice, indice), raw=False)
-
-	datos.update(str('C' + str(indice)), constants.FRM_DA_C.format(indice), raw=False)
-	datos.update(str('D' + str(indice)), constants.FRM_DA_D.format(indice, indice, indice, indice, indice, indice), raw=False)
-
-	time.sleep(tiempoMinimoBusquedaSpreadsheet)
-
-	preciosMarket.update(str('B' + str(indice)), constants.FRM_PMTI_B.format(indice), raw=False)
-	preciosMarket.update(str('C' + str(indice)), constants.FRM_PMT_C.format(indice, indice, indice, indice, indice), raw=False)
-	preciosMarket.update(str('D' + str(indice)), constants.FRM_PMT_D.format(indice), raw=False)
-	preciosMarket.update(str('E' + str(indice)), constants.FRM_PMT_E.format(indice), raw=False)
-	preciosMarket.update(str('J' + str(indice)), constants.FRM_PM_J.format(indice), raw=False)
-	preciosMarket.update(str('K' + str(indice)), constants.FRM_PMT_K.format(indice), raw=False)
-
-	preciosTrader.update(str('B' + str(indice)), constants.FRM_PMTI_B.format(indice), raw=False)
-	preciosTrader.update(str('C' + str(indice)), constants.FRM_PMT_C.format(indice, indice, indice, indice, indice), raw=False)
-	preciosTrader.update(str('D' + str(indice)), constants.FRM_PMT_D.format(indice), raw=False)
-	preciosTrader.update(str('E' + str(indice)), constants.FRM_PMT_E.format(indice), raw=False)
-	preciosTrader.update(str('J' + str(indice)), constants.FRM_PT_J.format(indice), raw=False)
-	preciosTrader.update(str('K' + str(indice)), constants.FRM_PMT_K.format(indice), raw=False)
-
-	imgs.update(str('B' + str(indice)), constants.FRM_IM_B.format(indice), raw=False)
-	imgs.update(str('C' + str(indice)), constants.FRM_PMTI_B.format(indice), raw=False)
-	imgs.update(str('D' + str(indice)), constants.FRM_IM_D.format(indice), raw=False)
-	imgs.update(str('E' + str(indice)), constants.FRM_IM_E.format(indice), raw=False)
-	imgs.update(str('F' + str(indice)), constants.FRM_IM_F.format(indice), raw=False)
-	imgs.update(str('G' + str(indice)), constants.FRM_IM_G.format(indice), raw=False)
-	imgs.update(str('H' + str(indice)), constants.FRM_IM_H.format(indice), raw=False)
-	imgs.update(str('I' + str(indice)), constants.FRM_IM_I.format(indice), raw=False)
-	imgs.update(str('J' + str(indice)), constants.FRM_IM_J.format(indice), raw=False)
-	imgs.update(str('K' + str(indice)), constants.FRM_IM_K.format(indice), raw=False)
-	imgs.update(str('M' + str(indice)), constants.FRM_IM_M.format(indice), raw=False)
+	datos.update(str('D' + str(indice)), constants.FRM_DA_D.format(indice, indice), raw=False)
+	datos.update(str('E' + str(indice)), constants.FRM_DA_E.format(indice, indice, indice), raw=False)
+	datos.update(str('P' + str(indice)), constants.FRM_DA_P.format(indice), raw=False)
+	datos.update(str('Q' + str(indice)), constants.FRM_DA_Q.format(indice), raw=False)
 
 	time.sleep(tiempoMinimoBusquedaSpreadsheet)
 
@@ -387,16 +386,16 @@ def getHoja(sheet):
 	scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 	creds = ServiceAccountCredentials.from_json_keyfile_name(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'client_secret.json'), scope)
 	client = gspread.authorize(creds)
-	logging.debug(str("Buscando " + sheet + " en " + configParserUtils.getConfigParserGet(constants.WORKBOOK_NAME)))
+	logging.info(str('Buscando ' + sheet + ' en ' + configParserUtils.getConfigParserGet(constants.WORKBOOK_NAME)))
 	return client.open(configParserUtils.getConfigParserGet(constants.WORKBOOK_NAME)).worksheet(sheet)
 
 
 def getHojaPrecios():
-	if configParserUtils.getConfigParserGet(constants.MODO_ESCANEO) == "0":
+	if configParserUtils.getConfigParserGet(constants.MODO_ESCANEO) == '0':
 		hoja = getHoja(constants.SHEET_NAME_PRECIOS_TRADER)
-	elif configParserUtils.getConfigParserGet(constants.MODO_ESCANEO) == "1":
+	elif configParserUtils.getConfigParserGet(constants.MODO_ESCANEO) == '1':
 		hoja = getHoja(constants.SHEET_NAME_PRECIOS_MARKET)
 	else:
-		logging.error("No se ha definido modo de escaneo")
-		raise Exception("No se ha definido modo de escaneo")
+		logging.error('No se ha definido modo de escaneo')
+		raise Exception('No se ha definido modo de escaneo')
 	return hoja

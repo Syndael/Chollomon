@@ -15,109 +15,137 @@ from datetime import datetime
 listaCNNum = []
 
 
+def buscarCodigoImagen(codigoCod):
+	logging.info('Buscando imagen de la carta {0}'.format(codigoCod))
+	formateoConst = constants.FORMATEO_1
+	rutaImg = descargarImg(codigoCod, formateoConst)
+	alterIndex = 0
+	if '_P1' in codigoCod:
+		alterIndex = 1
+
+	codigoCodRes = formateoConst.format(codigoCod)
+
+	if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == '2':
+		if os.path.getsize(rutaImg) < constants.TAMANHO_MIN_IMG:
+			formateoConst = constants.FORMATEO_2
+			if alterIndex == 1:
+				rutaImg = descargarImg(codigoCod.replace('_P1', 'P'), formateoConst)
+				codigoCodRes = formateoConst.format(codigoCod.replace('_P1', 'P'))
+			else:
+				rutaImg = descargarImg(codigoCod, formateoConst)
+				codigoCodRes = formateoConst.format(codigoCod)
+		if os.path.getsize(rutaImg) < constants.TAMANHO_MIN_IMG:
+			formateoConst = constants.FORMATEO_3
+			rutaImg = descargarImg(codigoCod, formateoConst)
+			codigoCodRes = formateoConst.format(codigoCod)
+		if os.path.getsize(rutaImg) < constants.TAMANHO_MIN_IMG:
+			formateoConst = constants.FORMATEO_4
+			if alterIndex == 1:
+				formateoConst = constants.FORMATEO_4_P1
+				rutaImg = descargarImg(codigoCod.replace('_P1', ''), formateoConst)
+				codigoCodRes = formateoConst.format(codigoCod.replace('_P1', ''))
+			else:
+				rutaImg = descargarImg(codigoCod.replace('_P', 'p'), formateoConst)
+				codigoCodRes = formateoConst.format(codigoCod.replace('_P', 'p'))
+		if os.path.getsize(rutaImg) < constants.TAMANHO_MIN_IMG:
+			formateoConst = constants.FORMATEO_5
+			if alterIndex == 1:
+				formateoConst = constants.FORMATEO_5_P1
+				rutaImg = descargarImg(codigoCod.replace('_P1', ''), formateoConst)
+				codigoCodRes = formateoConst.format(codigoCod.replace('_P1', ''))
+			else:
+				rutaImg = descargarImg(codigoCod.replace('_P', 'P'), formateoConst)
+				codigoCodRes = formateoConst.format(codigoCod.replace('_P', 'P'))
+
+	if os.path.getsize(rutaImg) > constants.TAMANHO_MIN_IMG:
+		try:
+			return codigoCodRes
+		except Exception as e2:
+			msgError2 = 'Error rellenado la imagen {0}'.format(codigoCodRes)
+			logging.error(msgError2, e2)
+			telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), msgError2)
+	return None
+
+
 def buscarCartas(prefijo, cantidad, formateo, cartasMix):
 	cartaIndex = 1
 	excepciones = ['EX2-002']
-	while cartaIndex <= cantidad:
+
+	coleccionesBusquedas = configParserUtils.getConfigParserGet(constants.COLECCIONES_BUSQUEDAS)
+	while cartaIndex <= cantidad and (coleccionesBusquedas == '' or coleccionesBusquedas == prefijo):
 		try:
 			numCarta = str(prefijo + constants.SEPARADOR_TEMP + formateo.format(cartaIndex))
-			logging.info("Buscando {}".format(numCarta))
-			formateoConst = constants.FORMATEO_1
-			if numCarta in cartasMix:
-				descargarAlters(cartasMix, numCarta)
-			else:
-				rutaImg = descargarImg(numCarta, formateoConst)
-				if os.path.getsize(rutaImg) < constants.TAMANHO_MIN_IMG:
-					formateoConst = constants.FORMATEO_2
-					rutaImg = descargarImg(numCarta, formateoConst)
-				if os.path.getsize(rutaImg) < constants.TAMANHO_MIN_IMG:
-					formateoConst = constants.FORMATEO_3
-					rutaImg = descargarImg(numCarta, formateoConst)
-				if os.path.getsize(rutaImg) < constants.TAMANHO_MIN_IMG:
+			if numCarta not in cartasMix:
+				logging.info('Buscando {}'.format(numCarta))
+				numCartaEncontrado = buscarCodigoImagen(numCarta)
+				if numCartaEncontrado:
+					addCarta(numCarta, numCartaEncontrado)
+					descargarAlter(cartasMix, numCarta)
+				else:
 					if cartaIndex == 1:
-						logging.info("No encontrado {} fin de colecciones".format(numCarta))
+						logging.info('No encontrado {} fin de colecciones'.format(numCarta))
 						return True
 					elif numCarta not in excepciones:
-						logging.info("No encontrado {} fin de temporada".format(numCarta))
+						logging.info('No encontrado {} fin de temporada'.format(numCarta))
 						return False
-				else:
-					addCarta(numCarta, formateoConst)
-					descargarAlters(cartasMix, numCarta)
+			else:
+				logging.info('Buscando alter {}'.format(numCarta))
+				descargarAlter(cartasMix, numCarta)
 		except Exception as ex:
-			logging.error("Error buscando la carta {}".format(str(prefijo + constants.SEPARADOR_TEMP + formateo.format(cartaIndex))), ex)
+			logging.error('Error buscando la carta {}'.format(str(prefijo + constants.SEPARADOR_TEMP + formateo.format(cartaIndex))), ex)
 		cartaIndex = cartaIndex + 1
+	return coleccionesBusquedas == '' or coleccionesBusquedas == prefijo or (prefijo != constants.PRE_TEMP_P and getIntColeccion(coleccionesBusquedas) < getIntColeccion(prefijo))
 
 
-def descargarAlters(cartasMix, numCarta):
-	descargarAlter(cartasMix, numCarta, 1)
-	descargarAlter(cartasMix, numCarta, 2)
+def getIntColeccion(colec):
+	return int(colec.replace(constants.PRE_TEMP_BT, '').replace(constants.PRE_TEMP_P, '').replace(constants.PRE_TEMP_ST, '').replace(constants.PRE_TEMP_EX, ''))
 
 
-def descargarAlter(cartasMix, numCarta, modo):
+def descargarAlter(cartasMix, numCarta):
 	alterIndex = 1
 	finAlter = False
 	while not finAlter:
-		if modo == 1:
-			numCartaAlter = str(numCarta + constants.PRE_ALTER + str(alterIndex))
-		else:
-			if alterIndex == 1:
-				numCartaAlter = str(numCarta + constants.PRE_ALTER_20220811)
-			else:
-				numCartaAlter = str(numCarta + constants.PRE_ALTER_20220811 + str(alterIndex))
-
-		logging.info(str("Buscando alter " + numCartaAlter))
-		formateoConst = constants.FORMATEO_1
+		numCartaAlter = str(numCarta + constants.PRE_ALTER + str(alterIndex))
 		if numCartaAlter not in cartasMix:
-			rutaImg = descargarImg(numCartaAlter, formateoConst)
-			if os.path.getsize(rutaImg) < constants.TAMANHO_MIN_IMG:
-				formateoConst = constants.FORMATEO_2
-				rutaImg = descargarImg(numCartaAlter, formateoConst)
-			if os.path.getsize(rutaImg) < constants.TAMANHO_MIN_IMG:
-				formateoConst = constants.FORMATEO_3
-				rutaImg = descargarImg(numCartaAlter, formateoConst)
-			if os.path.getsize(rutaImg) < constants.TAMANHO_MIN_IMG:
-				logging.info(str("No encontrado " + numCartaAlter + " fin de búsqueda de " + numCarta))
-				finAlter = True
+			numCartaAlterEncontrado = buscarCodigoImagen(numCartaAlter)
+			if numCartaAlterEncontrado:
+				addCarta(numCartaAlter, numCartaAlterEncontrado)
 			else:
-				addCarta(numCartaAlter, formateoConst)
+				logging.info(str('No encontrado ' + numCartaAlter + ' fin de búsqueda de ' + numCarta))
+				finAlter = True
 
 		alterIndex = alterIndex + 1
 
 
-def addCarta(numCarta, formateo):
+def addCarta(numCarta, numCartaEncontrada):
 	logging.info('Añadiendo {}'.format(numCarta))
-	if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "1":
-		spreedUtils.nuevaFila(numCarta, numCarta)
-	else:
-		spreedUtils.nuevaFila(numCarta, None)
-	urlImg = formatUrlCarta(formateo.format(numCarta))
+	spreedUtils.nuevaFila(numCarta)
+
+	urlImg = formatUrlCarta(numCartaEncontrada)
 	imgDownloader.descargarImg(constants.FORMATEO_IMG.format(numCarta), urlImg)
 	listaCNNum.append({constants.CODIGO: numCarta, constants.URL_IMAGEN: urlImg})
 
 
 def formatUrlCarta(numCarta):
-	if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "0":
+	if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == '0':
 		return str(constants.URL_TEMPLATE_GLOBAL + numCarta + constants.URLS_IMG_FORMAT)
-	elif configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "1":
+	elif configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == '1':
 		return str(constants.URL_TEMPLATE_JP + numCarta + constants.URLS_IMG_FORMAT)
-	elif configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "2":
-		coleccion = numCarta.split("-")[0].replace('e_', '')
-		return str(constants.URL_TEMPLATE_GLOBAL_20220811 + coleccion + "/" + numCarta + constants.URLS_IMG_FORMAT)
+	elif configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == '2':
+		coleccion = numCarta.split('-')[0].replace('e_', '')
+		return str(constants.URL_TEMPLATE_GLOBAL_20220811 + coleccion + '/' + numCarta + constants.URLS_IMG_FORMAT)
 	else:
-		logging.error("No se ha definido modo de busqueda")
-		raise Exception("No se ha definido modo de busqueda")
+		logging.error('No se ha definido modo de busqueda')
+		raise Exception('No se ha definido modo de busqueda')
 
 
 def descargarImg(numCarta, formateo):
 	urlImg = formatUrlCarta(formateo.format(numCarta))
-	return imgDownloader.descargarImg("tmpFinder.png", urlImg)
+	return imgDownloader.descargarImg('tmpFinder.png', urlImg)
 
 
 def buscarCartasNuevas():
-	if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "1":
-		cartasMix = {c: None for c in spreedUtils.getNumerosCartas(constants.CODIGOJP)}.keys()
-	else:
-		cartasMix = {c: None for c in spreedUtils.getNumerosCartas(constants.CODIGO)}.keys()
+	cartasMix = {c: None for c in spreedUtils.getNumerosCartas(constants.CODIGO)}.keys()
 
 	categorias = [
 		{constants.PREFIJO: constants.PRE_TEMP_BT, constants.TEMPORADA: True, constants.CANTIDAD: 999, constants.FORMAT: '{0:03d}'},
@@ -132,7 +160,7 @@ def buscarCartasNuevas():
 			while not ultimaTemporada:
 				temporada = str(categoria.get(constants.PREFIJO) + str(temporadaIndex))
 				ultimaTemporada = buscarCartas(temporada, categoria.get(constants.CANTIDAD), categoria.get(constants.FORMAT), cartasMix)
-				if temporada != 'ST11':
+				if temporada == 'ST11':
 					ultimaTemporada = False
 				temporadaIndex = temporadaIndex + 1
 				enviarTelegram()
@@ -142,15 +170,15 @@ def buscarCartasNuevas():
 
 
 def enviarTelegram():
-	if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "0":
-		textoExtra = "(Global)"
-	elif configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "1":
-		textoExtra = "(Japón)"
-	elif configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "2":
-		textoExtra = "(Global B+)"
+	if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == '0':
+		textoExtra = '(Global)'
+	elif configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == '1':
+		textoExtra = '(Japón)'
+	elif configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == '2':
+		textoExtra = '(Global B+)'
 	else:
-		logging.error("No se ha definido modo de busqueda")
-		raise Exception("No se ha definido modo de busqueda")
+		logging.error('No se ha definido modo de busqueda')
+		raise Exception('No se ha definido modo de busqueda')
 
 	tiempoMinimoBusquedaTelegramStr = configParserUtils.getConfigParserGet(constants.TIEMPO_MINIMO_BUSQUEDA_TELEGRAM)
 	tiempoMinimoBusquedaTelegram = 3
@@ -161,29 +189,36 @@ def enviarTelegram():
 		try:
 			numCarta = carta.get(constants.CODIGO)
 			nombreImg = str(constants.FORMATEO_IMG.format(numCarta))
-			rutaImg = os.path.join(os.path.abspath(os.path.dirname(__file__)), "img", nombreImg)
-			telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_CHAT_CANAL_CARTAS_ID), str("Nueva carta añadida " + numCarta + " " + textoExtra + " " + carta.get(constants.URL_IMAGEN)), rutaImg)
+			rutaImg = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'img', nombreImg)
+			telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_CHAT_CANAL_CARTAS_ID), str('Nueva carta añadida ' + numCarta + ' ' + textoExtra + ' ' + carta.get(constants.URL_IMAGEN)), rutaImg)
 			time.sleep(tiempoMinimoBusquedaTelegram)
 		except Exception as exc:
-			logging.error("Error notificando la carta {}".format(carta.get(constants.CODIGO)), exc)
+			logging.error('Error notificando la carta {}'.format(carta.get(constants.CODIGO)), exc)
 	listaCNNum.clear()
 
 
 if __name__ == '__main__':
 	try:
-		telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), "Buscando cartas nuevas a las %s" % datetime.now().strftime("%H:%M"))
+		buscador = configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR)
+		if buscador == '0':
+			buscador = 'EU Old'
+		elif buscador == '1':
+			buscador = 'JP'
+		elif buscador == '2':
+			buscador = 'EU'
+		telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), 'Buscando cartas nuevas a las {}, Buscador {}'.format(datetime.now().strftime('%H:%M'), buscador))
 		buscarCartasNuevas()
 		filler.rellenarCartas()
-		telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), "Fin búsqueda de cartas nuevas a las %s" % datetime.now().strftime("%H:%M"))
+		telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), 'Fin búsqueda de cartas nuevas a las %s' % datetime.now().strftime('%H:%M'))
 	except Exception as e:
-		msgError = "Error buscando cartas"
-		if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "0":
-			msgError = str(msgError + "(Global)")
-		elif configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "1":
-			msgError = str(msgError + "(Japón)")
-		elif configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == "2":
-			msgError = str(msgError + "(Global B+)")
+		msgError = 'Error buscando cartas'
+		if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == '0':
+			msgError = str(msgError + '(Global)')
+		elif configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == '1':
+			msgError = str(msgError + '(Japón)')
+		elif configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == '2':
+			msgError = str(msgError + '(Global B+)')
 		else:
-			logging.error("No se ha definido modo de búsqueda")
+			logging.error('No se ha definido modo de búsqueda')
 		logging.error(msgError, e)
 		telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), msgError)
