@@ -56,6 +56,11 @@ async def busqueda(seguimiento, indices, webBusqueda):
 						sinPrecio = await page.Jeval('div.table-body > div.text-center > p.noResults', 'node => node.innerText')
 					except ElementHandleError as e:
 						logging.debug('Error o precio encontrado', e)
+					if not sinPrecio:
+						try:
+							sinPrecio = await page.Jeval('div.table-body > p.noResults', 'node => node.innerText')
+						except ElementHandleError as e:
+							logging.debug('Error o precio encontrado', e)
 					if sinPrecio:
 						precio = '-'
 					else:
