@@ -136,6 +136,62 @@ async def busqueda(seguimiento, indices, webBusqueda):
 				spreedUtils.actualizarPrecios(actual, minimo, alarma, seguimiento.get(constants.FILA), indices)
 
 
+def rellenarImagenCm(codCarta, urlCm, fila):
+	try:
+		asyncio.get_event_loop().run_until_complete(asyncio.wait_for(busquedaImgCm(codCarta, urlCm, fila), timeout=30.0))
+	except Exception as e:
+		logging.error('Error al buscar la imagen en CM en %s' % urlCm, exc_info=e)
+
+
+async def busquedaImgCm(codCarta, urlCm, fila):
+	chromium = configParserUtils.getConfigParserGet(constants.CHROMIUM)
+	entornoDocker = configParserUtils.getConfigParserGet(constants.ENTORNO_DOCKER)
+	browser = None
+	page = None
+	urlImagen = None
+
+	try:
+		if chromium and len(chromium) > 0:
+			if entornoDocker and entornoDocker == 'True':
+				browser = await launch(logLevel=logging.WARN, executablePath=chromium, args=['--disable-dev-shm-usage', '--disable-gpu', '--single-process', '--no-zygote', '--no-sandbox'])
+			else:
+				browser = await launch(logLevel=logging.WARN, executablePath=chromium)
+		else:
+			if entornoDocker and entornoDocker == 'True':
+				browser = await launch(logLevel=logging.WARN, args=['--disable-dev-shm-usage', '--disable-gpu', '--single-process', '--no-zygote', '--no-sandbox'])
+			else:
+				browser = await launch(logLevel=logging.WARN)
+
+		page = await browser.newPage()
+		if page:
+			codigo = codCarta
+			await page.setViewport(dict(width=1200, height=2000))
+			await page.goto(urlCm, timeout=20000)
+			try:
+				urlImagen = await page.Jeval('div.card-slideshow > div.slideshow > div:nth-child(2) > div > img', 'node => node.src')
+			except ElementHandleError as e:
+				logging.debug(e)
+			except Exception as e:
+				logging.debug(e)
+
+			if urlImagen is None:
+				try:
+					urlImagen = await page.Jeval('#image > div > img', 'node => node.src')
+				except ElementHandleError as e:
+					logging.debug(e)
+	except Exception as e:
+		logging.error('Error accediendo a la web buscando la imagen %s' % urlCm, exc_info=e)
+	finally:
+		if page:
+			await page.close()
+		if browser:
+			await browser.close()
+
+	if urlImagen and len(urlImagen) > 0:
+		spreedUtils.rellenarImagenCm(fila, urlImagen)
+	return urlImagen
+
+
 def getFloatES(num):
 	numFl = float(num.replace('.', '').replace(',', '.').replace('€', '').replace(' ', ''))
 	return round(numFl, 2)

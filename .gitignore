@@ -2,15 +2,9 @@
 client_secret.json
 config.txt
 bots.txt
-.idea/.gitignore
-.idea/PreciosDigimones.iml
-.idea/codeStyles/codeStyleConfig.xml
-.idea/inspectionProfiles/profiles_settings.xml
-.idea/misc.xml
-.idea/modules.xml
-.idea/vcs.xml
-img/*
-.idea/*
+img/
+.idea/
+confs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

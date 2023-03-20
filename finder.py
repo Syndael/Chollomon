@@ -170,45 +170,77 @@ def buscarCartasNuevas():
 
 
 def enviarTelegram():
-	if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == '0':
-		textoExtra = '(Global)'
-	elif configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == '1':
-		textoExtra = '(Japón)'
-	elif configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == '2':
-		textoExtra = '(Global B+)'
-	else:
-		logging.error('No se ha definido modo de busqueda')
-		raise Exception('No se ha definido modo de busqueda')
+	if configParserUtils.getConfigParserGet(constants.FINDER_TELE) == '0':
+		if configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == '0':
+			textoExtra = '(Global)'
+		elif configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == '1':
+			textoExtra = '(Japón)'
+		elif configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR) == '2':
+			textoExtra = '(Global B+)'
+		else:
+			logging.error('No se ha definido modo de busqueda')
+			raise Exception('No se ha definido modo de busqueda')
 
+		enviarMensaje(textoExtra, listaCNNum)
+
+	listaCNNum.clear()
+
+
+def notificarCartas():
+	if configParserUtils.getConfigParserGet(constants.FINDER_TELE) == '1':
+		spreedUtils.marcarNotificada(0, enviarMensaje('(Global)', spreedUtils.getCartasNotificadasEuOld()))
+		spreedUtils.marcarNotificada(1, enviarMensaje('(Japón)', spreedUtils.getCartasNotificadasJp()))
+		spreedUtils.marcarNotificada(0, enviarMensaje('(Global B+)', spreedUtils.getCartasNotificadasEu()))
+		spreedUtils.marcarNotificada(0, enviarMensaje('(Manual)', spreedUtils.getCartasNotificadasOtros()))
+
+
+def enviarMensaje(textoExtra, listaCartas):
 	tiempoMinimoBusquedaTelegramStr = configParserUtils.getConfigParserGet(constants.TIEMPO_MINIMO_BUSQUEDA_TELEGRAM)
 	tiempoMinimoBusquedaTelegram = 3
 	if len(tiempoMinimoBusquedaTelegramStr) != 0:
 		tiempoMinimoBusquedaTelegram = int(tiempoMinimoBusquedaTelegramStr)
 
-	for carta in listaCNNum:
+	cartasNotificadas = []
+	for carta in listaCartas:
 		try:
 			numCarta = carta.get(constants.CODIGO)
 			nombreImg = str(constants.FORMATEO_IMG.format(numCarta))
 			rutaImg = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'img', nombreImg)
+			imgDownloader.descargarImg(nombreImg, carta.get(constants.URL_IMAGEN), rutaImg)
 			telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_CHAT_CANAL_CARTAS_ID), str('Nueva carta añadida ' + numCarta + ' ' + textoExtra + ' ' + carta.get(constants.URL_IMAGEN)), rutaImg)
 			time.sleep(tiempoMinimoBusquedaTelegram)
+			cartasNotificadas.append(carta)
 		except Exception as exc:
 			logging.error('Error notificando la carta {}'.format(carta.get(constants.CODIGO)), exc)
-	listaCNNum.clear()
+
+	return cartasNotificadas
 
 
 if __name__ == '__main__':
 	try:
 		buscador = configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR)
+		notificador = configParserUtils.getConfigParserGet(constants.FINDER_TELE)
+
 		if buscador == '0':
 			buscador = 'EU Old'
 		elif buscador == '1':
 			buscador = 'JP'
 		elif buscador == '2':
 			buscador = 'EU'
-		telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), 'Buscando cartas nuevas a las {}, Buscador {}'.format(datetime.now().strftime('%H:%M'), buscador))
-		buscarCartasNuevas()
+
+		if notificador == '0':
+			notificador = 'Original'
+		elif notificador == '1':
+			notificador = 'SI'
+		elif notificador == '2':
+			notificador = 'NO'
+
+		telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), 'Buscando cartas nuevas a las {}, Buscador {}, Notificar {}'.format(datetime.now().strftime('%H:%M'), buscador, notificador))
+		if configParserUtils.getConfigParserGet(constants.FINDER_TELE) != '1':
+			buscarCartasNuevas()
 		filler.rellenarCartas()
+		if configParserUtils.getConfigParserGet(constants.FINDER_TELE) == '1':
+			notificarCartas()
 		telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), 'Fin búsqueda de cartas nuevas a las %s' % datetime.now().strftime('%H:%M'))
 	except Exception as e:
 		msgError = 'Error buscando cartas'

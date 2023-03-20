@@ -4,6 +4,7 @@ import os
 import configParserUtils
 import constants
 import finder
+import scan
 import spreedUtils
 import telegramUtils
 
@@ -49,6 +50,13 @@ def rellenarCartas():
 				if cod:
 					spreedUtils.rellenarImagen(carta.get(constants.FILA), finder.formatUrlCarta(cod))
 
+	if configParserUtils.getConfigParserGet(constants.COPIAR_IMAGEN_CM) == '1':
+		for carta in spreedUtils.getCartasCm(configParserUtils.getConfigParserGet(constants.COPIAR_IMAGEN_CM_FORZADO) == '1'):
+			codCarta = carta.get(constants.CODIGO)
+			if codCarta:
+				logging.info('COPIAR_IMAGEN_CM de {0}'.format(codCarta))
+				scan.rellenarImagenCm(codCarta, carta.get(constants.URL_PRECIO), carta.get(constants.FILA))
+
 
 if __name__ == '__main__':
 	try:
@@ -56,6 +64,8 @@ if __name__ == '__main__':
 		datos = configParserUtils.getConfigParserGet(constants.COPIAR_DATOS_GENERALES)
 		codImg = configParserUtils.getConfigParserGet(constants.COPIAR_CODIGO_IMAGEN)
 		img = configParserUtils.getConfigParserGet(constants.COPIAR_IMAGEN)
+		imgCm = configParserUtils.getConfigParserGet(constants.COPIAR_IMAGEN_CM)
+		imgCmForzado = configParserUtils.getConfigParserGet(constants.COPIAR_IMAGEN_CM_FORZADO)
 		buscador = configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR)
 		if buscador == '0':
 			buscador = 'EU Old'
@@ -63,7 +73,7 @@ if __name__ == '__main__':
 			buscador = 'JP'
 		elif buscador == '2':
 			buscador = 'EU'
-		telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), 'Rellenando datos a las {}, Formulas {}, Datos {}, Codigo img {}, Imagen {}, Buscador {}'.format(datetime.now().strftime('%H:%M'), frm, datos, codImg, img, buscador))
+		telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), 'Rellenando datos a las {}, Formulas {}, Datos {}, Codigo img {}, Imagen {}, Imagen CM(forzado {}) {}, Buscador {}'.format(datetime.now().strftime('%H:%M'), frm, datos, codImg, img, imgCmForzado, imgCm, buscador))
 		rellenarCartas()
 		telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), 'Fin relleno datos a las %s' % datetime.now().strftime('%H:%M'))
 	except Exception as e:
