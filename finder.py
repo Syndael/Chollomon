@@ -1,11 +1,14 @@
+import asyncio
 import logging
 import os
+import re
 import time
 
 import configParserUtils
 import constants
 import filler
 import imgDownloader
+import scan
 import spreedUtils
 import telegramUtils
 
@@ -204,10 +207,17 @@ def enviarMensaje(textoExtra, listaCartas):
 	for carta in listaCartas:
 		try:
 			numCarta = carta.get(constants.CODIGO)
+			nombreCarta = carta.get(constants.NOMBRE)
 			nombreImg = str(constants.FORMATEO_IMG.format(numCarta))
 			rutaImg = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'img', nombreImg)
 			imgDownloader.descargarImg(nombreImg, carta.get(constants.URL_IMAGEN), rutaImg)
-			telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_CHAT_CANAL_CARTAS_ID), str('Nueva carta añadida ' + numCarta + ' ' + textoExtra + ' ' + carta.get(constants.URL_IMAGEN)), rutaImg)
+
+			if nombreCarta and len(nombreCarta) > 0:
+				msg = 'Nueva carta añadida {} {} {} {}'.format(numCarta, nombreCarta, textoExtra, carta.get(constants.URL_IMAGEN))
+			else:
+				msg = 'Nueva carta añadida {} {} {}'.format(numCarta, textoExtra, carta.get(constants.URL_IMAGEN))
+
+			telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_CHAT_CANAL_CARTAS_ID), msg, rutaImg)
 			time.sleep(tiempoMinimoBusquedaTelegram)
 			cartasNotificadas.append(carta)
 		except Exception as exc:
@@ -216,7 +226,43 @@ def enviarMensaje(textoExtra, listaCartas):
 	return cartasNotificadas
 
 
-if __name__ == '__main__':
+def addCartasManuales():
+	telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), 'Añadiendo cartas manuales')
+	cartasManuales = spreedUtils.getCodigosCartasManuales()
+	for carta in spreedUtils.getCartasManuales():
+		splitCarta = carta.get(constants.URL_PRECIO).split('/')
+		codCarta = splitCarta[-1]
+		if '?' in codCarta:
+			codCarta = codCarta.split('?')[0]
+
+		codManual = carta.get(constants.COD_MANUAL)
+		codFinal = None
+
+		if codManual and len(codManual) > 0:
+			codFinal = codManual
+
+			if codFinal:
+				logging.info(codFinal)
+				imgUrlCm = asyncio.get_event_loop().run_until_complete(asyncio.wait_for(scan.busquedaImgCm(codCarta, carta.get(constants.URL_PRECIO)), timeout=30.0))
+				spreedUtils.nuevaFila(codFinal, carta.get(constants.URL_PRECIO), imgUrlCm, carta.get(constants.FILA), carta.get(constants.NOMBRE))
+		else:
+			codCarta = codCarta.split('-')
+			for i in range(len(codCarta)):
+				if re.match(r'^(BT[1-9][0-9]?|EX[1-9][0-9]?|P|ST[1-9][0-9]?)$', codCarta[i]):
+					codCartaN = "{}-{}".format(codCarta[i], codCarta[i + 1])
+					for j in range(99):
+						codFinal = "{}_MN-{}".format(codCartaN, j + 1)
+						if not codFinal in cartasManuales:
+							break
+
+			if codFinal:
+				logging.info(codFinal)
+				imgUrlCm = asyncio.get_event_loop().run_until_complete(asyncio.wait_for(scan.busquedaImgCm(codCarta, carta.get(constants.URL_PRECIO)), timeout=30.0))
+				spreedUtils.nuevaFila(codFinal, carta.get(constants.URL_PRECIO), imgUrlCm, carta.get(constants.FILA), carta.get(constants.NOMBRE))
+			break
+
+
+def main():
 	try:
 		buscador = configParserUtils.getConfigParserGet(constants.MODO_BUSCADOR)
 		notificador = configParserUtils.getConfigParserGet(constants.FINDER_TELE)
@@ -237,6 +283,7 @@ if __name__ == '__main__':
 
 		telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), 'Buscando cartas nuevas a las {}, Buscador {}, Notificar {}'.format(datetime.now().strftime('%H:%M'), buscador, notificador))
 		if configParserUtils.getConfigParserGet(constants.FINDER_TELE) != '1':
+			addCartasManuales()
 			buscarCartasNuevas()
 		filler.rellenarCartas()
 		if configParserUtils.getConfigParserGet(constants.FINDER_TELE) == '1':
@@ -254,3 +301,7 @@ if __name__ == '__main__':
 			logging.error('No se ha definido modo de búsqueda')
 		logging.error(msgError, e)
 		telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), msgError)
+
+
+if __name__ == '__main__':
+	main()

@@ -1,5 +1,5 @@
 [config]
-logFile =
+logFile = template.log
 chromium =
 entornoDocker = False
 bucleInfinito = False
@@ -9,18 +9,29 @@ cantidadBusquedas = 1
 # Colecciones incluidas en busqueda
 coleccionesBusquedas =
 enviarSinPrecio = False
+# Configuracion cadena, par de nombre del config que se usa + proceso que se ejecuta, separado por ; cada bloque y | para conf
+cadena = template.txt|scan;template2.txt|filler
 # Copiar formulas en las celdas si es valor es 1
 copiarFormula = 0
 # Busca e inserta los datos de digimoncard.io/api-public si el valor es 1
 copiarDatosGenerales = 1
 # Busca e inserta la URL de la imagen si el valor es 1
 copiarImagen = 1
+# Busca e inserta la URL de la imagen en CardMarket si el valor es 1, forzado a 1 sobrescribe la imagen si existe
+copiarImagenCmForzado = 0
+copiarImagenCm = 0
 # Busca e inserta el codigo de la imagen si el valor es 1
 copiarCodigoImagen = 1
+# Diferencias entre las imagenes, 0 (EU/JP), 1 (EU/CM), 2 ambos, forzado 1 asigna valor siempre, 0 solo vacios
+diferenciasImg = 2
+diferenciasImgForzado = 0
+coefRevision = 5
 # True busca en la primera vuelta cartas sin tener en cuenta la casilla busqueda
 forzarPrimeraBusqueda = True
 # 0 World, 1 Japon, 2 Global B+
 modoBuscador = 2
+# 0 Original, 1 Solo notificar, 2 Sin notificar
+buscadorNotificaTelegram = 1
 # 0 Trader, 1 Market
 modoEscaneo = 0
 telegramBotToken =

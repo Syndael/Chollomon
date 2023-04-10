@@ -16,3 +16,9 @@ def getConfigParser():
 		lectorConfig.read(ficheroConfig)
 
 	return lectorConfig
+
+
+def reloadConfigParser():
+	global lectorConfig
+	lectorConfig = None
+	return getConfigParser()

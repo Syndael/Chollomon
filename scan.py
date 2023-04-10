@@ -143,7 +143,7 @@ def rellenarImagenCm(codCarta, urlCm, fila):
 		logging.error('Error al buscar la imagen en CM en %s' % urlCm, exc_info=e)
 
 
-async def busquedaImgCm(codCarta, urlCm, fila):
+async def busquedaImgCm(codCarta, urlCm, fila=None):
 	chromium = configParserUtils.getConfigParserGet(constants.CHROMIUM)
 	entornoDocker = configParserUtils.getConfigParserGet(constants.ENTORNO_DOCKER)
 	browser = None
@@ -164,7 +164,6 @@ async def busquedaImgCm(codCarta, urlCm, fila):
 
 		page = await browser.newPage()
 		if page:
-			codigo = codCarta
 			await page.setViewport(dict(width=1200, height=2000))
 			await page.goto(urlCm, timeout=20000)
 			try:
@@ -187,7 +186,7 @@ async def busquedaImgCm(codCarta, urlCm, fila):
 		if browser:
 			await browser.close()
 
-	if urlImagen and len(urlImagen) > 0:
+	if urlImagen and len(urlImagen) > 0 and fila:
 		spreedUtils.rellenarImagenCm(fila, urlImagen)
 	return urlImagen
 

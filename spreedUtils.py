@@ -153,6 +153,36 @@ def getCartasCm(forzarBusqueda):
 	return numeros
 
 
+def getCartasManuales():
+	hoja = getHoja(constants.SHEET_NAME_MANUALES)
+	cartasManuales = []
+	cartas = hoja.get_all_records()
+	indiceFila = 2
+	for carta in cartas:
+		urlCm = carta.get(constants.URL_PRECIO)
+		incluido = carta.get(constants.INCLUIDO)
+		codManual = carta.get(constants.COD_MANUAL)
+		nombre = carta.get(constants.NOMBRE)
+		if incluido == 'FALSE' and urlCm and len(urlCm) > 0:
+			cartasManuales.append({constants.FILA: indiceFila, constants.URL_PRECIO: urlCm, constants.COD_MANUAL: codManual, constants.NOMBRE: nombre})
+		indiceFila = indiceFila + 1
+	return cartasManuales
+
+
+def getCodigosCartasManuales():
+	hoja = getHoja(constants.SHEET_NAME_DATOS)
+	cartasManuales = []
+	cartas = hoja.get_all_records()
+	indiceFila = 2
+	for carta in cartas:
+		codCarta = carta.get(constants.CODIGO)
+		temp = carta.get(constants.TEMP)
+		if (not temp or temp == constants.TEMP_MANUAL) and codCarta and len(codCarta) > 0:
+			cartasManuales.append(codCarta)
+		indiceFila = indiceFila + 1
+	return cartasManuales
+
+
 def getCartasNotificadasEuOld():
 	return getCartasNotificadas(0)
 
@@ -175,6 +205,7 @@ def getCartasNotificadas(modo):
 	indiceFila = 2
 	for carta in datos.get_all_records():
 		codCarta = carta.get(constants.CODIGO)
+		nombreCarta = carta.get(constants.NOMBRE)
 		if modo == 1:
 			urlImg = carta.get(constants.URL_JAPO)
 			notificar = carta.get(constants.NOTIFICAR_JP)
@@ -182,8 +213,8 @@ def getCartasNotificadas(modo):
 			urlImg = carta.get(constants.URL_IMAGEN)
 			notificar = carta.get(constants.NOTIFICAR_EU)
 
-		if codCarta and len(codCarta) > 0 and urlImg and len(urlImg) > 0 and notificar == 'TRUE' and ((modo == 0 and constants.URL_TEMPLATE_GLOBAL in urlImg) or (modo == 2 and constants.URL_TEMPLATE_GLOBAL_20220811 in urlImg) or modo == 1 or (modo == 3 and constants.URL_TEMPLATE_GLOBAL_20220811 not in urlImg and constants.URL_TEMPLATE_GLOBAL not in urlImg)):
-			numeros.append({constants.CODIGO: codCarta, constants.FILA: indiceFila, constants.URL_IMAGEN: urlImg})
+		if codCarta and len(codCarta) > 0 and urlImg and len(urlImg) > 0 and notificar == 'TRUE' and urlImg != '-' and ((modo == 0 and constants.URL_TEMPLATE_GLOBAL in urlImg) or (modo == 2 and constants.URL_TEMPLATE_GLOBAL_20220811 in urlImg) or modo == 1 or (modo == 3 and constants.URL_TEMPLATE_GLOBAL_20220811 not in urlImg and constants.URL_TEMPLATE_GLOBAL not in urlImg)):
+			numeros.append({constants.CODIGO: codCarta, constants.NOMBRE: nombreCarta, constants.FILA: indiceFila, constants.URL_IMAGEN: urlImg})
 		indiceFila = indiceFila + 1
 	return numeros
 
@@ -214,6 +245,7 @@ def getCartasDiff(diff):
 	if diff == '1':
 		hojaCm = getHoja(constants.SHEET_NAME_PRECIOS_MARKET)
 
+	forzar = configParserUtils.getConfigParserGet(constants.DIFERENCIA_IMG_F)
 	numerosDatos = {}
 	numerosFinales = []
 	indiceFila = 2
@@ -224,7 +256,8 @@ def getCartasDiff(diff):
 			codCarta = carta.get(constants.CODIGO)
 			urlImg = carta.get(constants.URL_IMAGEN)
 			urlImgJp = carta.get(constants.URL_JAPO)
-			if codCarta and len(codCarta) > 1 and urlImg and len(urlImg) > 1 and urlImgJp and len(urlImgJp) > 1:
+			euJp = carta.get(constants.EU_JP)
+			if codCarta and len(codCarta) > 1 and urlImg and len(urlImg) > 1 and urlImgJp and len(urlImgJp) > 1 and not euJp == '-' and (not euJp or forzar == '1'):
 				numerosFinales.append({constants.CODIGO: codCarta, constants.FILA: indiceFila, constants.IMAGEN_EU: urlImg, constants.IMAGEN_OTRO: urlImgJp})
 
 			indiceFila = indiceFila + 1
@@ -233,19 +266,42 @@ def getCartasDiff(diff):
 		for carta in cartas:
 			codCarta = carta.get(constants.CODIGO)
 			urlImg = carta.get(constants.URL_IMAGEN)
-			if codCarta and len(codCarta) > 1 and urlImg and len(urlImg) > 1:
+			euCm = carta.get(constants.EU_CM)
+			if codCarta and len(codCarta) > 1 and urlImg and len(urlImg) > 1 and not euCm == '-' and (not euCm or forzar == '1'):
 				numerosDatos[codCarta] = urlImg
 
 		cartas = hojaCm.get_all_records()
 		for carta in cartas:
 			codCarta = carta.get(constants.CODIGO)
 			urlImg = carta.get(constants.URL_IMAGEN)
-			if codCarta and len(codCarta) > 1 and urlImg and len(urlImg) > 1 and codCarta in numerosDatos:
+			if codCarta and len(codCarta) > 1 and urlImg and len(urlImg) > 1 and codCarta in numerosDatos and not numerosDatos[codCarta] == urlImg:
 				numerosFinales.append({constants.CODIGO: codCarta, constants.FILA: indiceFila, constants.IMAGEN_EU: numerosDatos[codCarta], constants.IMAGEN_OTRO: urlImg})
 
 			indiceFila = indiceFila + 1
 
 	return numerosFinales
+
+
+def getCartasRevisar(diff):
+	datos = getHoja(constants.SHEET_NAME_IMGS)
+	cartas = datos.get_all_records()
+	coefRev = float(configParserUtils.getConfigParserGet(constants.COEF_REVISION))
+	revisar = []
+
+	for carta in cartas:
+		codCarta = carta.get(constants.CODIGO)
+		if carta.get(constants.EU_JP) and not carta.get(constants.EU_JP) == '-':
+			euJp = float(carta.get(constants.EU_JP)) / 1000
+		else:
+			euJp = 0
+		if carta.get(constants.EU_CM) and not carta.get(constants.EU_CM) == '-':
+			euCm = float(carta.get(constants.EU_CM)) / 1000
+		else:
+			euCm = 0
+		if codCarta and len(codCarta) > 1 and (((diff == '0' or diff == '2') and euJp > coefRev) or ((diff == '1' or diff == '2') and euCm > coefRev)):
+			revisar.append(codCarta)
+
+	return revisar
 
 
 def getListaSeguimientos(forzarBusqueda):
@@ -302,7 +358,10 @@ def getIndices(hoja):
 		constants.CODIGOJP: 0,
 		constants.CODIGOEU: 0,
 		constants.NOTIFICAR_EU: 0,
-		constants.NOTIFICAR_JP: 0
+		constants.NOTIFICAR_JP: 0,
+		constants.URL_PRECIO_F: 0,
+		constants.INCLUIDO: 0,
+		constants.COD_MANUAL: 0
 	}
 
 	for tituloIndex in range(len(titulos)):
@@ -357,13 +416,22 @@ def getIndices(hoja):
 			indicesCampos[constants.NOTIFICAR_EU] = tituloIndex + 1
 		elif titulo == constants.NOTIFICAR_JP:
 			indicesCampos[constants.NOTIFICAR_JP] = tituloIndex + 1
+		elif titulo == constants.URL_PRECIO_F:
+			indicesCampos[constants.URL_PRECIO_F] = tituloIndex + 1
+		elif titulo == constants.INCLUIDO:
+			indicesCampos[constants.INCLUIDO] = tituloIndex + 1
+		elif titulo == constants.COD_MANUAL:
+			indicesCampos[constants.COD_MANUAL] = tituloIndex + 1
+		elif titulo == constants.NOMBRE:
+			indicesCampos[constants.NOMBRE] = tituloIndex + 1
 
 	return indicesCampos
 
 
-def nuevaFila(nMixCarta):
+def nuevaFila(nMixCarta, urlCm=None, imgCm=None, indiceManual=None, nombreManual=None):
 	album = getHoja(constants.SHEET_NAME_ALBUM)
-	album.append_row([nMixCarta])
+	indicesAlbum = getIndices(album)
+	indiceAlbum = int(album.append_row([nMixCarta]).get('updates').get('updatedRange').replace('{}!A'.format(constants.SHEET_NAME_ALBUM), ''))
 	preciosTrader = getHoja(constants.SHEET_NAME_PRECIOS_TRADER)
 	preciosTrader.append_row([nMixCarta])
 	preciosMarket = getHoja(constants.SHEET_NAME_PRECIOS_MARKET)
@@ -373,7 +441,27 @@ def nuevaFila(nMixCarta):
 	imgs = getHoja(constants.SHEET_NAME_IMGS)
 	imgs.append_row([nMixCarta])
 	datos = getHoja(constants.SHEET_NAME_DATOS)
-	datos.append_row([nMixCarta])
+	indicesDatos = getIndices(datos)
+	indiceDatos = int(datos.append_row([nMixCarta]).get('updates').get('updatedRange').replace('{}!A'.format(constants.SHEET_NAME_DATOS), ''))
+	manuales = getHoja(constants.SHEET_NAME_MANUALES)
+	indicesManuales = getIndices(manuales)
+
+	if urlCm:
+		album.update_cell(indiceAlbum, indicesAlbum.get(constants.URL_PRECIO_F), urlCm)
+	if imgCm:
+		datos.update_cell(indiceDatos, indicesDatos.get(constants.URL_IMAGEN), imgCm)
+		datos.update_cell(indiceDatos, indicesDatos.get(constants.NOTIFICAR_EU), True)
+	if nombreManual and len(nombreManual) > 0:
+		datos.update_cell(indiceDatos, indicesDatos.get(constants.NOMBRE), nombreManual)
+	if indiceManual:
+		manuales.update_cell(indiceManual, indicesManuales.get(constants.INCLUIDO), True)
+		manuales.update_cell(indiceManual, indicesManuales.get(constants.CODIGO), nMixCarta)
+
+		tiempoMinimoBusquedaSpreadsheetStr = configParserUtils.getConfigParserGet(constants.TIEMPO_MINIMO_BUSQUEDA_SPREADSHEET)
+		tiempoMinimoBusquedaSpreadsheet = 30
+		if len(tiempoMinimoBusquedaSpreadsheetStr) != 0:
+			tiempoMinimoBusquedaSpreadsheet = int(tiempoMinimoBusquedaSpreadsheetStr)
+		time.sleep(tiempoMinimoBusquedaSpreadsheet)
 
 
 def rellenarCodigoJp(indice, codCarta):
@@ -398,17 +486,17 @@ def rellenarCodigoEuJp(indice, campo, codCarta):
 
 
 def rellenarDiff(conf, indice, valor, codCarta):
-	datos = getHoja(constants.SHEET_NAME_IMGS)
+	datos = getHoja(constants.SHEET_NAME_DATOS)
 	indices = getIndices(datos)
 	campo = None
-	valor = round(valor, 2) / 100
+	valor = round(valor, 2) / 1000
 	if conf == '0':
 		campo = constants.EU_JP
 	elif conf == '1':
 		campo = constants.EU_CM
 
 	if campo:
-		logging.info("Rellenando la carta {} con el valor {} en {}".format(codCarta, valor, campo))
+		logging.info("Rellenando la carta {} con el valor {} en {}, indice {}".format(codCarta, valor, campo, indice))
 		datos.update_cell(indice, indices.get(campo), valor)
 
 		tiempoMinimoBusquedaSpreadsheetStr = configParserUtils.getConfigParserGet(constants.TIEMPO_MINIMO_BUSQUEDA_SPREADSHEET)

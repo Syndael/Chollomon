@@ -58,7 +58,7 @@ def rellenarCartas():
 				scan.rellenarImagenCm(codCarta, carta.get(constants.URL_PRECIO), carta.get(constants.FILA))
 
 
-if __name__ == '__main__':
+def main():
 	try:
 		frm = configParserUtils.getConfigParserGet(constants.COPIAR_FORMULA)
 		datos = configParserUtils.getConfigParserGet(constants.COPIAR_DATOS_GENERALES)
@@ -80,3 +80,7 @@ if __name__ == '__main__':
 		msgError = 'Error rellenado datos'
 		logging.error(msgError, e)
 		telegramUtils.enviarMensajeTelegram(configParserUtils.getConfigParserGet(constants.TELEGRAM_LOG_CHAT_ID), msgError)
+
+
+if __name__ == '__main__':
+	main()
